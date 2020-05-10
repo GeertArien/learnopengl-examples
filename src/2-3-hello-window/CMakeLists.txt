@@ -1,0 +1,5 @@
+fips_begin_app(2-3-1-rendering windowed)
+    fips_vs_warning_level(3)
+    fips_files(1-rendering.c)
+    fips_deps(sokol cimgui ui)
+fips_end_app()

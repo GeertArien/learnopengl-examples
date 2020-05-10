@@ -1,0 +1,16 @@
+fips_begin_app(2-7-1-scale-rotate windowed)
+    fips_vs_warning_level(3)
+    fips_files(1-scale-rotate.c)
+    sokol_shader(transformations.glsl ${slang})
+    fipsutil_copy(textures-assets.yml)
+    fips_deps(sokol hmm cimgui stb ui)
+fips_end_app()
+
+fips_begin_app(2-7-2-rotate-translate windowed)
+    fips_vs_warning_level(3)
+    fips_files(2-rotate-translate.c)
+    sokol_shader(transformations.glsl ${slang})
+    fipsutil_copy(textures-assets.yml)
+    fips_deps(sokol hmm cimgui stb ui)
+fips_end_app()
+
