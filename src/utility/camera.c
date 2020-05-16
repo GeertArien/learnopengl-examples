@@ -23,21 +23,27 @@ struct cam_desc create_camera(hmm_vec3 position, hmm_vec3 up, float yaw, float p
     camera.movement_speed = SPEED;
     camera.mouse_sensitivity = SENSITIVITY;
     camera.zoom = ZOOM;
+    camera.movement_enabled = true;
 
     update_camera_vectors(&camera);
     
     return camera;
 }
 
-// Returns the view matrix calculated using Euler Angles and the LookAt Matrix
 hmm_mat4 get_view_matrix(const struct cam_desc* camera) {
     hmm_vec3 direction = HMM_AddVec3(camera->position, camera->front);
     return HMM_LookAt(camera->position, direction, camera->up);
 }
 
- // Processes input received from any keyboard-like input system.
- // Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
+void toggle_camera_movement(struct cam_desc* camera) {
+    camera->movement_enabled = !camera->movement_enabled;
+}
+
 void process_keyboard(struct cam_desc* camera, enum camera_movement direction, float delta_time) {
+    if (!camera->movement_enabled) {
+        return;
+    }
+
     float velocity = camera->movement_speed * delta_time;
     if (direction == CAM_MOV_FORWARD) {
         hmm_vec3 offset = HMM_MultiplyVec3f(camera->front, velocity);
@@ -57,8 +63,11 @@ void process_keyboard(struct cam_desc* camera, enum camera_movement direction, f
     }
 }
 
-// Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
 void process_mouse_movement(struct cam_desc* camera, float xoffset, float yoffset) {
+    if (!camera->movement_enabled) {
+        return;
+    }
+
     xoffset *= camera->mouse_sensitivity;
     yoffset *= camera->mouse_sensitivity;
 
@@ -77,8 +86,11 @@ void process_mouse_movement(struct cam_desc* camera, float xoffset, float yoffse
     update_camera_vectors(camera);
 }
 
-// Processes input received from a mouse scroll-wheel event. Only requires input on the vertical wheel-axis
 void process_mouse_scroll(struct cam_desc* camera, float yoffset) {
+    if (!camera->movement_enabled) {
+        return;
+    }
+
     if (camera->zoom >= 1.0f && camera->zoom <= 45.0f)
         camera->zoom -= yoffset;
     if (camera->zoom <= 1.0f)

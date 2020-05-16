@@ -33,12 +33,16 @@ struct cam_desc {
     float movement_speed;
     float mouse_sensitivity;
     float zoom;
+    bool movement_enabled;
 };
 
 struct cam_desc create_camera(hmm_vec3 position, hmm_vec3 up, float yaw, float pitch);
 
 // Returns the view matrix calculated using Euler Angles and the LookAt Matrix
 hmm_mat4 get_view_matrix(const struct cam_desc* camera);
+
+// Enable or disable camera movement
+void toggle_camera_movement(struct cam_desc* camera);
 
  // Processes input received from any keyboard-like input system.
  // Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)

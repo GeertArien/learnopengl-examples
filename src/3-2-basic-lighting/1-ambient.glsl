@@ -24,7 +24,11 @@ uniform fs_params {
 };
 
 void main() {
-    FragColor = vec4(lightColor * objectColor, 1.0);
+    float ambientStrength = 0.1;
+    vec3 ambient = ambientStrength * lightColor;
+
+    vec3 result = ambient * objectColor;
+    FragColor = vec4(result, 1.0);
 }
 @end
 
@@ -36,6 +40,5 @@ void main() {
 }
 @end
 
-
-@program simple vs fs
+@program ambient vs fs
 @program light_cube vs light_cube_fs
