@@ -18,7 +18,7 @@ static struct {
     sg_pipeline pip;
     sg_bindings bind;
     sg_pass_action pass_action;
-    uint8_t file_buffer[256 * 1024];
+    uint8_t file_buffer[512 * 1024];
 } state;
 
 static void fetch_callback(const sfetch_response_t*);
