@@ -17,7 +17,10 @@ uniform vs_params {
 void main() {
     gl_Position = projection * view * model * vec4(aPos, 1.0);
     FragPos = vec3(model * vec4(aPos, 1.0));
-    Normal = mat3(transpose(inverse(model))) * aNormal;     // computing the normal matrix once, on the cpu, would be more efficient
+    // inverse tranpose is left out because:
+    // (a) glsl es 1.0 (webgl 1.0) doesn't have inverse and transpose functions
+    // (b) were not performing non-uniform scale
+    Normal = mat3(model) * aNormal;
 }
 @end
 

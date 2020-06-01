@@ -2,6 +2,7 @@
 /*
     The typical debug UI overlay useful for most sokol-app samples
 */
+#include "stddef.h"
 #include "sokol_app.h"
 
 typedef void (draw_callback)(void);

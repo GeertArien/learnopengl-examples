@@ -1,0 +1,386 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta charset="UTF-8"/>
+<title>Learn OpenGL Examples</title>
+<link rel="icon" type="image/png" href="favicon.png"/>
+<style type="text/css">
+
+/**
+ * Reset some basic elements
+ */
+ *,
+*:after,
+*:before {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+*,
+*:focus {
+    outline: none;
+}
+
+/**
+ * Basic styling
+ */
+::selection {
+    color: #ffffff;
+    background: #42ab9e;
+}
+
+p,
+pre {
+    margin: 1em 0;
+}
+
+hr {
+  margin: 30px 0;
+  border-bottom: 1px solid #BBBBBB;
+}
+
+/**
+  * General layout
+  */
+html {
+    height: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-font-smoothing: antialiased;
+    -font-smoothing: antialiased;
+}
+
+body {
+    width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+    font-weight: 400;
+    font-size: 18px;
+    font-family: -apple-system,".SFNSText-Regular","San Francisco","Roboto",
+"Segoe UI","Helvetica Neue","Lucida Grande",Arial,sans-serif;
+    line-height: 30px;
+    color: #111111;
+    background-color: #EEEEEE;
+}
+
+main {
+    margin-top: 30px;
+    position: relative;
+    display: block;
+    min-height: 500px;
+}
+
+/**
+ * Columns
+ */
+ .col-15 {
+    width: 13%;
+    margin-left: 1%;
+    margin-right: 1%;
+    margin-bottom: 2%;
+    float: left;
+}
+
+@media only screen and (max-width:1550px) {
+    .col-15 {
+        width: 17.5%;
+    }
+}
+
+@media only screen and (max-width:1200px) {
+    .col-15 {
+        width: 22%;
+        margin-left: 1.25%;
+        margin-right: 1.25%;
+        margin-bottom: 2.5%;
+    }
+}
+
+@media only screen and (max-width:900px) {
+    .col-15 {
+        width: 30%;
+        margin-left: 1.5%;
+        margin-right: 1.5%;
+        margin-bottom: 3%;
+    }
+}
+
+@media only screen and (max-width:640px) {
+    .col-15 {
+        width: 46%;
+        margin-left: 2%;
+        margin-right: 2%;
+        margin-bottom: 4%;
+    }
+
+    .col-15.first,
+    .col-15.last {
+        width: 96%;
+    }
+
+    .col-15.last-none {
+        display: none;
+    }
+}
+@media only screen and (max-width:520px) {
+    .col-15 {
+        width: 96%;
+        margin-bottom: 6%;
+    }
+}
+
+/**
+ * Headings
+ */
+h1 {
+    font-size: 54px;
+}
+
+h2 {
+    color: #3c5289;
+    font-size: 40px;
+    margin: 40px 0px 30px 0px;
+}
+
+h3 {
+    color: #000000;
+    font-size: 28px;
+}
+
+h4 {
+    color: #333333;
+    font-size: 18px;
+}
+
+/**
+ * Images
+ */
+img.responsive {
+    width: 100%;
+    height: auto;
+}
+
+img.center-block {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/**
+ * Header
+ */
+
+header {
+    line-height: 54px;
+}
+
+header h1 {
+    display: inline;
+}
+
+header a {
+    color: #3c5289;
+    text-decoration: none;
+}
+
+header a:hover {
+    color: #273559;
+}
+
+nav {
+    display: inline;
+    margin: 0 auto;
+    overflow: hidden;
+}
+
+nav ul {
+    display: inline;
+    margin: 0;
+    padding: 0;
+}
+
+nav li {
+    font-size: 18px;
+    margin: 0 0 0 20px;
+    display: block;
+    font-weight: 600;
+}
+
+nav li a {
+    position: relative;
+}
+
+nav li a:hover {
+    position: relative;
+}
+
+@media (min-width: 756px) {
+    nav li {
+        display: inline;
+    }
+}
+
+/**
+ * Clearfix
+ */
+.group:after {
+    clear: both;
+}
+
+.group:after,
+.group:before {
+    content: " ";
+    display: table;
+}
+
+/**
+ * Main
+ **/
+
+main h3 a {
+    color: #000000;
+    text-decoration: none;
+}
+
+main h3 a:hover {
+    color: #273559;
+}
+
+main h3 i.icon-link-ext:before {
+    font-size: 20px;
+    line-height: inherit;
+}
+
+
+/**
+ * Articles
+ */
+
+article section.header {
+    margin-bottom: 1.0em;
+}
+
+article section.examples {
+  display: flex;
+  align-items: normal;
+  flex-wrap: wrap;
+  margin-left: -1%;
+  margin-right: -1%;
+}
+
+figure {
+    position: relative;
+    height: 100%;
+    background: #E8E8E8;
+    line-height: 0px;
+    box-shadow: 0 0 15px #666;
+    transition: box-shadow 0.2s ease-in-out;
+}
+
+figure > div {
+    transition: opacity 0.3s ease;
+}
+
+figure:hover {
+    box-shadow: 0 0 20px #444;
+    background-color: #FCFCFC;
+}
+
+figure:hover > div {
+    opacity: 1;
+}
+
+figcaption {
+    line-height: 24px;
+    padding: 0.5em 0.5em;
+    text-align: center;
+}
+
+figure a {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    bottom: 0;
+    right: 0;
+    color: transparent;
+    text-indent: -90000px;
+}
+
+@media only screen and (min-width:520px) {
+  figure > div {
+    opacity: 0.9;
+  }
+}
+
+/**
+ * Icons
+ */
+
+@font-face {
+  font-family: 'fontello';
+  src: url('./fontello.woff2?75027123') format('woff2'),
+       url('./fontello.woff?75027123') format('woff');
+  font-weight: normal;
+  font-style: normal;
+}
+ 
+[class^="icon-"]:before, [class*=" icon-"]:before {
+  font-family: "fontello";
+  font-style: normal;
+  font-weight: normal;
+  speak: never;
+ 
+  display: inline-block;
+  text-decoration: inherit;
+  width: 1em;
+  margin-right: .2em;
+  text-align: center;
+  /* opacity: .8; */
+ 
+  /* For safety - reset parent styles, that can break glyph codes*/
+  font-variant: normal;
+  text-transform: none;
+ 
+  /* fix buttons height, for twitter bootstrap */
+  line-height: 1em;
+ 
+  /* Animation center compensation - margins should be symmetric */
+  /* remove if not needed */
+  margin-left: .2em;
+ 
+  /* you can be more comfortable with increased icons size */
+  /* font-size: 120%; */
+ 
+  /* Font smoothing. That was taken from TWBS */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+ 
+  /* Uncomment for 3D effect */
+  /* text-shadow: 1px 1px 1px rgba(127, 127, 127, 0.3); */
+}
+ 
+.icon-link-ext:before { content: '\f08e'; } /* '' */
+
+</style>
+</head>
+<body>
+<header>
+<h1><a class="main-menu-link" href="https://github.com/geertarien/learnopengl-examples">Learn OpenGL Examples</a></h1>
+<nav>
+    <ul>
+    <li><a href="https://github.com/geertarien/learnopengl-examples">github</a></li>
+    <li><a href="https://learnopengl.com">learnopengl</a></li>
+    <li><a href="https://github.com/floooh/sokol">sokol</a></li>
+    <li><a href="https://www.geertarien.com">blog</a></li>
+    </ul>
+</nav>
+</header>
+<main>
+    ${samples}
+</main>
+</body>
+</html>
