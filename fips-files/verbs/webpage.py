@@ -50,9 +50,14 @@ items = [
             [ 'scene', '3-1-1-scene', '1-scene.c', 'shaders.glsl']
         ]],
         [ 'Basic Lighting', 'https://learnopengl.com/Lighting/Basic-Lighting', '3-2-basic-lighting', [
-            [ 'ambient', '3-2-1-ambient', '1-ambient.c', 'ambient.glsl'],
-            [ 'diffuse', '3-2-2-diffuse', '2-diffuse.c', 'diffuse.glsl'],
-            [ 'specular', '3-2-3-specular', '3-specular.c', 'specular.glsl']
+            [ 'ambient', '3-2-1-ambient', '1-ambient.c', '1-ambient.glsl'],
+            [ 'diffuse', '3-2-2-diffuse', '2-diffuse.c', '2-diffuse.glsl'],
+            [ 'specular', '3-2-3-specular', '3-specular.c', '3-specular.glsl']
+        ]],
+        [ 'Materials', 'https://learnopengl.com/Lighting/Materials', '3-3-materials', [
+            [ 'material', '3-3-1-material', '1-material.c', '1-material.glsl'],
+            [ 'light', '3-3-2-light', '2-light.c', '2-light.glsl'],
+            [ 'light-colors', '3-3-3-light-colors', '3-light-colors.c', '3-light-colors.glsl']
         ]]
     ]]
 ]

@@ -1,11 +1,11 @@
 //------------------------------------------------------------------------------
-//  Basic Lighting (3)
+//  Materials (2)
 //------------------------------------------------------------------------------
 #include "sokol_app.h"
 #include "sokol_gfx.h"
 #include "sokol_time.h"
 #include "hmm/HandmadeMath.h"
-#include "3-specular.glsl.h"
+#include "2-light.glsl.h"
 #include "ui/ui.h"
 #include "../utility/camera.h"
 #define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
@@ -23,8 +23,6 @@ static struct {
     float last_x;
     float last_y;
     struct cam_desc camera;
-    hmm_vec3 object_color;
-    hmm_vec3 light_color;
     hmm_vec3 light_pos;
 } state;
 
@@ -52,8 +50,6 @@ static void init(void) {
     state.camera = create_camera(HMM_Vec3(0.0f, 0.0f,  3.0f), HMM_Vec3(0.0f, 1.0f,  0.0f), -90.f, 0.0f);
 
     // set object and light configuration
-    state.object_color = HMM_Vec3(1.0f, 0.5f, 0.31f);
-    state.light_color = HMM_Vec3(1.0f, 1.0f, 1.0f);
     state.light_pos = HMM_Vec3(1.2f, 1.0f, 2.0f);
 
     float vertices[] = {
@@ -109,11 +105,11 @@ static void init(void) {
     });
 
     /* create shader from code-generated sg_shader_desc */
-    sg_shader specular_shd = sg_make_shader(specular_shader_desc());
+    sg_shader phong_shd = sg_make_shader(phong_shader_desc());
 
     /* create a pipeline object for object */
     state.pip_object = sg_make_pipeline(&(sg_pipeline_desc){
-        .shader = specular_shd,
+        .shader = phong_shd,
         /* if the vertex layout doesn't have gaps, don't need to provide strides and offsets */
         .layout = {
             .attrs = {
@@ -173,12 +169,25 @@ void frame(void) {
     sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &vs_params, sizeof(vs_params));
 
     fs_params_t fs_params = {
-        .objectColor = state.object_color,
         .viewPos = state.camera.position,
-        .lightColor = state.light_color,
-        .lightPos = state.light_pos
     };
     sg_apply_uniforms(SG_SHADERSTAGE_FS, SLOT_fs_params, &fs_params, sizeof(fs_params));
+
+    fs_material_t fs_material = {
+        .ambient = HMM_Vec3(1.0f, 0.5f, 0.31f),
+        .diffuse = HMM_Vec3(1.0f, 0.5f, 0.31f),
+        .specular = HMM_Vec3(0.5f, 0.5f, 0.5f),
+        .shininess = 32.0f,
+    };
+    sg_apply_uniforms(SG_SHADERSTAGE_FS, SLOT_fs_material, &fs_material, sizeof(fs_material));
+
+    fs_light_t fs_light = {
+        .position = state.light_pos,
+        .ambient = HMM_Vec3(0.2f, 0.2f, 0.2f),
+        .diffuse = HMM_Vec3(0.5f, 0.5f, 0.5f),
+        .specular = HMM_Vec3(1.0f, 1.0f, 1.0f)
+    };
+    sg_apply_uniforms(SG_SHADERSTAGE_FS, SLOT_fs_light, &fs_light, sizeof(fs_light));
 
     sg_draw(0, 36, 1);
 
@@ -242,7 +251,6 @@ void event(const sapp_event* e) {
     ui_event(e);
 }
 
-
 void cleanup(void) {
     ui_shutdown();
     sg_shutdown();
@@ -257,6 +265,6 @@ sapp_desc sokol_main(int argc, char* argv[]) {
         .width = 800,
         .height = 600,
         .gl_force_gles2 = true,
-        .window_title = "Specular (LearnOpenGL)",
+        .window_title = "Light (LearnOpenGL)",
     };
 }
