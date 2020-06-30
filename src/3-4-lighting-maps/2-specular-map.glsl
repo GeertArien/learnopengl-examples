@@ -39,7 +39,6 @@ uniform fs_params {
 };
 
 uniform fs_material {
-    vec3 specular;
     float shininess;
 } material;
 
@@ -51,6 +50,7 @@ uniform fs_light {
 } light;
 
 uniform sampler2D diffuse_texture;
+uniform sampler2D specular_texture;
 
 void main() {
     // ambient
@@ -66,7 +66,7 @@ void main() {
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 reflectDir = reflect(-lightDir, norm);  
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-    vec3 specular = light.specular * (spec * material.specular);  
+    vec3 specular = light.specular * spec * vec3(texture(specular_texture, TexCoords));  
         
     vec3 result = ambient + diffuse + specular;
     FragColor = vec4(result, 1.0);

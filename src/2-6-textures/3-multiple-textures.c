@@ -36,7 +36,7 @@ static void init(void) {
     });
     ui_setup(1);
 
-     /* setup sokol-fetch
+    /* setup sokol-fetch
         The 1 channel and 1 lane configuration essentially serializes
         IO requests. Which is just fine for this example. */
     sfetch_setup(&(sfetch_desc_t){

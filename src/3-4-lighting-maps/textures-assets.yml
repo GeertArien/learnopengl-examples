@@ -1,0 +1,7 @@
+---
+options:
+  src_dir: ../data
+
+files: 
+  - container2.png
+  - container2_specular.png

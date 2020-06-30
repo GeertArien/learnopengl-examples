@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//  Lighting Maps (1)
+//  Lighting Maps (2)
 //------------------------------------------------------------------------------
 #include "sokol_app.h"
 #include "sokol_gfx.h"
@@ -8,7 +8,7 @@
 #include "sokol_fetch.h"
 #include "stb/stb_image.h"
 #include "hmm/HandmadeMath.h"
-#include "1-diffuse-map.glsl.h"
+#include "2-specular-map.glsl.h"
 #include "ui/ui.h"
 #include "../utility/camera.h"
 #define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
@@ -54,6 +54,7 @@ static void init(void) {
        will be silently dropped.
     */
     state.bind_object.fs_images[SLOT_diffuse_texture] = sg_alloc_image();
+    state.bind_object.fs_images[SLOT_specular_texture] = sg_alloc_image();
 
     /* flip images vertically after loading */
     stbi_set_flip_vertically_on_load(true);  
@@ -170,7 +171,8 @@ static void init(void) {
         .colors[0] = { .action=SG_ACTION_CLEAR, .val={0.1f, 0.1f, 0.1f, 1.0f} }
     };
 
-    sg_image img_id = state.bind_object.fs_images[SLOT_diffuse_texture];
+    sg_image img_id_diffuse = state.bind_object.fs_images[SLOT_diffuse_texture];
+    sg_image img_id_specular = state.bind_object.fs_images[SLOT_specular_texture];
 
     /* start loading the PNG file */
     sfetch_send(&(sfetch_request_t){
@@ -178,8 +180,17 @@ static void init(void) {
         .callback = fetch_callback,
         .buffer_ptr = state.file_buffer,
         .buffer_size = sizeof(state.file_buffer),
-        .user_data_ptr = &img_id,
-        .user_data_size = sizeof(img_id)
+        .user_data_ptr = &img_id_diffuse,
+        .user_data_size = sizeof(img_id_diffuse)
+    });
+
+    sfetch_send(&(sfetch_request_t){
+        .path = "container2_specular.png",
+        .callback = fetch_callback,
+        .buffer_ptr = state.file_buffer,
+        .buffer_size = sizeof(state.file_buffer),
+        .user_data_ptr = &img_id_specular,
+        .user_data_size = sizeof(img_id_specular)
     });
 }
 
@@ -253,7 +264,6 @@ void frame(void) {
     sg_apply_uniforms(SG_SHADERSTAGE_FS, SLOT_fs_params, &fs_params, sizeof(fs_params));
 
     fs_material_t fs_material = {
-        .specular = HMM_Vec3(0.5f, 0.5f, 0.5f),
         .shininess = 32.0f,
     };
     sg_apply_uniforms(SG_SHADERSTAGE_FS, SLOT_fs_material, &fs_material, sizeof(fs_material));
@@ -342,6 +352,6 @@ sapp_desc sokol_main(int argc, char* argv[]) {
         .width = 800,
         .height = 600,
         .gl_force_gles2 = true,
-        .window_title = "Diffuse Map (LearnOpenGL)",
+        .window_title = "Specular Map (LearnOpenGL)",
     };
 }
