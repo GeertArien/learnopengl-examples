@@ -11,8 +11,6 @@ get_filename_component(FIPS_ROOT_DIR "../fips" ABSOLUTE)
 include("${FIPS_ROOT_DIR}/cmake/fips.cmake")
 
 fips_setup()
-fips_ide_group("Imports")
-fips_import_fips_cimgui_cimgui()
 fips_ide_group("")
 
 # just suppress this pesky "missing field initializer warning" for now

@@ -1,0 +1,43 @@
+fips_begin_app(2-5-1-directional-light windowed)
+    fips_vs_warning_level(3)
+    fips_files(
+        1-directional-light.c
+        ../utility/camera.c
+    )
+    sokol_shader(1-directional-light.glsl ${slang})
+    fipsutil_copy(textures-assets.yml)
+    fips_deps(sokol hmm stb)
+fips_end_app()
+
+fips_begin_app(2-5-2-point-light windowed)
+    fips_vs_warning_level(3)
+    fips_files(
+        2-point-light.c
+        ../utility/camera.c
+    )
+    sokol_shader(2-point-light.glsl ${slang})
+    fipsutil_copy(textures-assets.yml)
+    fips_deps(sokol hmm stb)
+fips_end_app()
+
+fips_begin_app(2-5-3-spot-light windowed)
+    fips_vs_warning_level(3)
+    fips_files(
+        3-spot-light.c
+        ../utility/camera.c
+    )
+    sokol_shader(3-spot-light.glsl ${slang})
+    fipsutil_copy(textures-assets.yml)
+    fips_deps(sokol hmm stb)
+fips_end_app()
+
+fips_begin_app(2-5-4-soft-spot-light windowed)
+    fips_vs_warning_level(3)
+    fips_files(
+        4-soft-spot-light.c
+        ../utility/camera.c
+    )
+    sokol_shader(4-soft-spot-light.glsl ${slang})
+    fipsutil_copy(textures-assets.yml)
+    fips_deps(sokol hmm stb)
+fips_end_app()

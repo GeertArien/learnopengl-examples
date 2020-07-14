@@ -1,100 +1,56 @@
 #include "camera.h"
 
-void update_camera_vectors(struct cam_desc* camera) {
-    // Calculate the new Front vector
-    hmm_vec3 front;
-    front.X = cosf(HMM_ToRadians(camera->yaw)) * cosf(HMM_ToRadians(camera->pitch));
-    front.Y = sinf(HMM_ToRadians(camera->pitch));
-    front.Z = sinf(HMM_ToRadians(camera->yaw)) * cosf(HMM_ToRadians(camera->pitch));
-    camera->front = HMM_NormalizeVec3(front);
-    // Also re-calculate the Right and Up vector
-    // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
-    camera->right = HMM_NormalizeVec3(HMM_Cross(camera->front, camera->world_up));  
-    camera->up    = HMM_NormalizeVec3(HMM_Cross(camera->right, camera->front));
-}
-
-struct cam_desc create_camera(hmm_vec3 position, hmm_vec3 up, float yaw, float pitch) {
-    struct cam_desc camera;
-    camera.position = position;
-    camera.world_up = up;
-    camera.yaw = yaw;
-    camera.pitch = pitch;
-
-    camera.movement_speed = SPEED;
-    camera.mouse_sensitivity = SENSITIVITY;
-    camera.zoom = ZOOM;
-    camera.movement_enabled = true;
-
-    update_camera_vectors(&camera);
+struct camera create_camera() {
+    struct camera camera;
+    
+    camera.orbital_cam = create_orbital_camera(HMM_Vec3(0.0f, 0.0f,  0.0f), HMM_Vec3(0.0f, 1.0f,  0.0f), 0.0f, 0.0f, 5.0f);
+    camera.fp_cam = create_fp_camera(HMM_Vec3(0.0f, 0.0f,  3.0f), HMM_Vec3(0.0f, 1.0f,  0.0f), -90.f, 0.0f);
+    camera.fp_enabled = false;
+    camera.mouse_shown = true;
+    camera.first_mouse = true;
     
     return camera;
 }
 
-hmm_mat4 get_view_matrix(const struct cam_desc* camera) {
-    hmm_vec3 direction = HMM_AddVec3(camera->position, camera->front);
-    return HMM_LookAt(camera->position, direction, camera->up);
-}
-
-void toggle_camera_movement(struct cam_desc* camera) {
-    camera->movement_enabled = !camera->movement_enabled;
-}
-
-void process_keyboard(struct cam_desc* camera, enum camera_movement direction, float delta_time) {
-    if (!camera->movement_enabled) {
-        return;
+hmm_mat4 get_view_matrix(struct camera* camera) {
+    if (camera->fp_enabled) {
+        return get_view_matrix_fp(&camera->fp_cam);
     }
-
-    float velocity = camera->movement_speed * delta_time;
-    if (direction == CAM_MOV_FORWARD) {
-        hmm_vec3 offset = HMM_MultiplyVec3f(camera->front, velocity);
-        camera->position = HMM_AddVec3(camera->position, offset);
-    }
-    else if (direction == CAM_MOV_BACKWARD) {
-        hmm_vec3 offset = HMM_MultiplyVec3f(camera->front, velocity);
-        camera->position = HMM_SubtractVec3(camera->position, offset);
-    }
-    else if (direction == CAM_MOV_LEFT) {
-        hmm_vec3 offset = HMM_MultiplyVec3f(camera->right, velocity);
-        camera->position = HMM_SubtractVec3(camera->position, offset);
-    }
-    else if (direction == CAM_MOV_RIGHT) {
-        hmm_vec3 offset = HMM_MultiplyVec3f(camera->right, velocity);
-        camera->position = HMM_AddVec3(camera->position, offset);
+    else {
+        return get_view_matrix_orbital(&camera->orbital_cam);
     }
 }
 
-void process_mouse_movement(struct cam_desc* camera, float xoffset, float yoffset) {
-    if (!camera->movement_enabled) {
-        return;
+void handle_input(struct camera* camera, const sapp_event* e, float delta_time) {
+    if (e->type == SAPP_EVENTTYPE_KEY_DOWN) {
+        if (e->key_code == SAPP_KEYCODE_C) {
+            camera->fp_enabled = !camera->fp_enabled;
+        }
+        else if (e->key_code == SAPP_KEYCODE_SPACE) {
+            bool mouse_shown = sapp_mouse_shown();
+            sapp_show_mouse(!mouse_shown);
+        }
     }
 
-    xoffset *= camera->mouse_sensitivity;
-    yoffset *= camera->mouse_sensitivity;
+    hmm_vec2 mouse_offset = HMM_Vec2(0.0f, 0.0f);
 
-    camera->yaw   += xoffset;
-    camera->pitch += yoffset;
+    if (e->type == SAPP_EVENTTYPE_MOUSE_MOVE) {
+        if (!camera->first_mouse) {
+            mouse_offset.X = e->mouse_x - camera->last_x;
+            mouse_offset.Y = camera->last_y - e->mouse_y;
+        }
+        else {
+            camera->first_mouse = false;
+        }
 
-    // Make sure that when pitch is out of bounds, screen doesn't get flipped
-    if (camera->pitch > 89.0f) {
-        camera->pitch = 89.0f;
-    }
-    else if (camera->pitch < -89.0f) {
-        camera->pitch = -89.0f;
-    }
-
-    // Update Front, Right and Up Vectors using the updated Euler angles
-    update_camera_vectors(camera);
-}
-
-void process_mouse_scroll(struct cam_desc* camera, float yoffset) {
-    if (!camera->movement_enabled) {
-        return;
+        camera->last_x = e->mouse_x;
+        camera->last_y = e->mouse_y;
     }
 
-    if (camera->zoom >= 1.0f && camera->zoom <= 45.0f)
-        camera->zoom -= yoffset;
-    if (camera->zoom <= 1.0f)
-        camera->zoom = 1.0f;
-    else if (camera->zoom >= 45.0f)
-        camera->zoom = 45.0f;
+    if (camera->fp_enabled) {
+        handle_input_fp(&camera->fp_cam, e, mouse_offset, delta_time);
+    }
+    else {
+        handle_input_orbital(&camera->orbital_cam, e, mouse_offset);
+    }
 }
