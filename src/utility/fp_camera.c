@@ -8,7 +8,7 @@ static const float MIN_PITCH        = -89.0f;
 static const float MAX_PITCH        =  89.0f;
 static const float MIN_ZOOM         =  1.0f;
 static const float MAX_ZOOM         =  45.0f;
-static const float MOVEMENT_SPEED   =  2.5f;
+static const float MOVEMENT_SPEED   =  0.01f;
 static const float AIM_SPEED        =  1.0f;
 static const float ZOOM_SPEED       =  0.1f;
 
@@ -51,7 +51,7 @@ struct fp_cam create_fp_camera(hmm_vec3 position, hmm_vec3 up, float yaw, float 
     camera.aim_speed = AIM_SPEED;
     camera.zoom_speed = ZOOM_SPEED;
     // control state
-    camera.movement_enabled = true;
+    camera.enable_aim = false;
 
     update_camera_vectors(&camera);
     
@@ -63,15 +63,7 @@ hmm_mat4 get_view_matrix_fp(struct fp_cam* camera) {
     return HMM_LookAt(camera->position, direction, camera->up);
 }
 
-static void toggle_fp_camera_movement(struct fp_cam* camera) {
-    camera->movement_enabled = !camera->movement_enabled;
-}
-
 static void move_fp_camera(struct fp_cam* camera, enum camera_movement direction, float delta_time) {
-    if (!camera->movement_enabled) {
-        return;
-    }
-
     float velocity = camera->movement_speed * delta_time;
     if (direction == CAM_MOV_FORWARD) {
         hmm_vec3 offset = HMM_MultiplyVec3f(camera->front, velocity);
@@ -92,10 +84,6 @@ static void move_fp_camera(struct fp_cam* camera, enum camera_movement direction
 }
 
 static void aim_fp_camera(struct fp_cam* camera, hmm_vec2 mouse_offset) {
-    if (!camera->movement_enabled) {
-        return;
-    }
-
     camera->yaw   += mouse_offset.X * camera->aim_speed;
     camera->pitch += mouse_offset.Y * camera->aim_speed;
 
@@ -105,33 +93,50 @@ static void aim_fp_camera(struct fp_cam* camera, hmm_vec2 mouse_offset) {
 }
 
 static void zoom_fp_camera(struct fp_cam* camera, float yoffset) {
-    if (!camera->movement_enabled) {
-        return;
-    }
-     
     camera->zoom -= yoffset * camera->zoom_speed;
     camera->zoom = HMM_Clamp(camera->min_zoom, camera->zoom, camera->max_zoom);
 }
 
 void handle_input_fp(struct fp_cam* camera, const sapp_event* e, hmm_vec2 mouse_offset, float delta_time) {
     if (e->type == SAPP_EVENTTYPE_KEY_DOWN) {
-        if (e->key_code == SAPP_KEYCODE_W) {
+        if (e->key_code == SAPP_KEYCODE_W || e->key_code == SAPP_KEYCODE_UP) {
             move_fp_camera(camera, CAM_MOV_FORWARD, delta_time);
         }
-        else if (e->key_code == SAPP_KEYCODE_S) {
+        else if (e->key_code == SAPP_KEYCODE_S || e->key_code == SAPP_KEYCODE_DOWN) {
             move_fp_camera(camera, CAM_MOV_BACKWARD, delta_time);
         }
-        else if (e->key_code == SAPP_KEYCODE_A) {
+        else if (e->key_code == SAPP_KEYCODE_A || e->key_code == SAPP_KEYCODE_LEFT) {
             move_fp_camera(camera, CAM_MOV_LEFT, delta_time);
         }
-        else if (e->key_code == SAPP_KEYCODE_D) {
+        else if (e->key_code == SAPP_KEYCODE_D || e->key_code == SAPP_KEYCODE_RIGHT) {
             move_fp_camera(camera, CAM_MOV_RIGHT, delta_time);
         }
     }
+    else if (e->type == SAPP_EVENTTYPE_MOUSE_DOWN) {
+		if (e->mouse_button == SAPP_MOUSEBUTTON_LEFT) {
+			camera->enable_aim = true;
+		}
+	}
+	else if (e->type == SAPP_EVENTTYPE_MOUSE_UP) {
+		if (e->mouse_button == SAPP_MOUSEBUTTON_LEFT) {
+			camera->enable_aim = false;
+		}
+	}
     else if (e->type == SAPP_EVENTTYPE_MOUSE_MOVE) {
-        aim_fp_camera(camera, mouse_offset);
+        if (camera->enable_aim) {
+            aim_fp_camera(camera, mouse_offset);
+        }
     }
     else if (e->type == SAPP_EVENTTYPE_MOUSE_SCROLL) {
         zoom_fp_camera(camera, e->scroll_y);
     }
+}
+
+const char* get_help_fp() {
+    return  "Forward:\t'W' '\xf0'\n"
+            "Left:\t\t'A' '\xf2\'\n"
+            "Back:\t\t'S' '\xf1\'\n"
+            "Right:\t\t'D' '\xf3\'\n"
+            "Look:\t\tleft-mouse-btn\n"
+            "Zoom:\t\tmouse-scroll\n";
 }

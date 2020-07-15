@@ -5,6 +5,8 @@
 #include "sokol_gfx.h"
 #include "sokol_glue.h"
 #include "sokol_time.h"
+#define SOKOL_DEBUGTEXT_IMPL
+#include "sokol_debugtext.h"
 #include "hmm/HandmadeMath.h"
 #include "shaders.glsl.h"
 #include "../utility/camera.h"
@@ -15,8 +17,6 @@ static struct {
     sg_pipeline pip_light;
     sg_bindings bind;
     sg_pass_action pass_action;
-    uint64_t last_time;
-    uint64_t frame_time;
     struct camera camera;
     hmm_vec3 object_color;
     hmm_vec3 light_color;
@@ -30,6 +30,12 @@ static void init(void) {
 
     /* initialize sokol_time */
     stm_setup();
+
+    sdtx_setup(&(sdtx_desc_t){
+        .fonts = {
+            [0] = sdtx_font_cpc()
+        }
+    });
 
     // hide mouse cursor
     sapp_show_mouse(false);
@@ -137,7 +143,8 @@ static void init(void) {
 }
 
 void frame(void) {
-    state.frame_time = stm_laptime(&state.last_time);
+    update(&state.camera);
+
     sg_begin_default_pass(&state.pass_action, sapp_width(), sapp_height());
 
     hmm_mat4 view = get_view_matrix(&state.camera);
@@ -169,19 +176,14 @@ void frame(void) {
     sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &vs_params, sizeof(vs_params));
     sg_draw(0, 36, 1);
 
+    render_help(&state.camera);
+
     sg_end_pass();
     sg_commit();
 }
 
 void event(const sapp_event* e) {
-    if (e->type == SAPP_EVENTTYPE_KEY_DOWN) {
-        if (e->key_code == SAPP_KEYCODE_ESCAPE) {
-            sapp_request_quit();
-        }
-    }
-
-    float delta_time = (float) stm_sec(state.frame_time);
-    handle_input(&state.camera, e, delta_time);
+    handle_input(&state.camera, e);
 }
 
 

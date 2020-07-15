@@ -81,3 +81,8 @@ void handle_input_orbital(struct orbital_cam* camera, const sapp_event* e, hmm_v
 
     update_camera_vectors(camera);
 }
+
+const char* get_help_orbital() {
+    return  "Look:\t\tleft-mouse-btn\n"
+            "Zoom:\t\tmouse-scroll\n";
+}

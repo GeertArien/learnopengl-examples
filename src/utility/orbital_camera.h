@@ -31,4 +31,6 @@ hmm_mat4 get_view_matrix_orbital(struct orbital_cam* camera);
 
 void handle_input_orbital(struct orbital_cam* camera, const sapp_event* e, hmm_vec2 mouse_offset);
 
+const char* get_help_orbital();
+
 #endif

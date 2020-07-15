@@ -13,12 +13,19 @@ struct camera {
     bool first_mouse;
     float last_x;
     float last_y;
+    bool show_help;
+    uint64_t time_stamp;
+    uint64_t frame_time;
 };
 
 struct camera create_camera();
 
+void update(struct camera* camera);
+
 hmm_mat4 get_view_matrix(struct camera* camera);
 
-void handle_input(struct camera* camera, const sapp_event* e, float delta_time);
+void handle_input(struct camera* camera, const sapp_event* e);
+
+void render_help();
 
 #endif

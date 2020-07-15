@@ -25,7 +25,7 @@ struct fp_cam {
     float aim_speed;
     float zoom_speed;
     // control state
-    bool movement_enabled;
+    bool enable_aim;
 };
 
 struct fp_cam create_fp_camera(hmm_vec3 position, hmm_vec3 up, float yaw, float pitch);
@@ -34,5 +34,7 @@ struct fp_cam create_fp_camera(hmm_vec3 position, hmm_vec3 up, float yaw, float 
 hmm_mat4 get_view_matrix_fp(struct fp_cam* camera);
 
 void handle_input_fp(struct fp_cam* camera, const sapp_event* e, hmm_vec2 mouse_offset, float delta_time);
+
+const char* get_help_fp();
 
 #endif
