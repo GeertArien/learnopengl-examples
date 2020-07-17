@@ -2,7 +2,6 @@ fips_begin_app(2-3-1-material windowed)
     fips_vs_warning_level(3)
     fips_files(
         1-material.c
-        ../utility/camera.c
     )
     sokol_shader(1-material.glsl ${slang})
     fips_deps(sokol hmm)
@@ -12,7 +11,6 @@ fips_begin_app(2-3-2-light windowed)
     fips_vs_warning_level(3)
     fips_files(
         2-light.c
-        ../utility/camera.c
     )
     sokol_shader(2-light.glsl ${slang})
     fips_deps(sokol hmm)
@@ -22,7 +20,6 @@ fips_begin_app(2-3-3-light-colors windowed)
     fips_vs_warning_level(3)
     fips_files(
         3-light-colors.c
-        ../utility/camera.c
     )
     sokol_shader(3-light-colors.glsl ${slang})
     fips_deps(sokol hmm)

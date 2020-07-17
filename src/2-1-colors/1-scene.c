@@ -3,13 +3,10 @@
 //------------------------------------------------------------------------------
 #include "sokol_app.h"
 #include "sokol_gfx.h"
-#include "sokol_glue.h"
-#include "sokol_time.h"
-#define SOKOL_DEBUGTEXT_IMPL
-#include "sokol_debugtext.h"
 #include "hmm/HandmadeMath.h"
 #include "shaders.glsl.h"
-#include "../utility/camera.h"
+#define LOPGL_APP_IMPL
+#include "../lopgl_app.h"
 
 /* application state */
 static struct {
@@ -17,31 +14,14 @@ static struct {
     sg_pipeline pip_light;
     sg_bindings bind;
     sg_pass_action pass_action;
-    struct camera camera;
     hmm_vec3 object_color;
     hmm_vec3 light_color;
     hmm_vec3 light_pos;
 } state;
 
 static void init(void) {
-    sg_setup(&(sg_desc){
-        .context = sapp_sgcontext()
-    });
-
-    /* initialize sokol_time */
-    stm_setup();
-
-    sdtx_setup(&(sdtx_desc_t){
-        .fonts = {
-            [0] = sdtx_font_cpc()
-        }
-    });
-
-    // hide mouse cursor
-    sapp_show_mouse(false);
-
-    // set default camera configuration
-    state.camera = create_camera();
+    // setup app
+    lopgl_setup();
 
     // set object and light configuration
     state.object_color = HMM_Vec3(1.0f, 0.5f, 0.31f);
@@ -143,11 +123,11 @@ static void init(void) {
 }
 
 void frame(void) {
-    update(&state.camera);
+    lopgl_update();
 
     sg_begin_default_pass(&state.pass_action, sapp_width(), sapp_height());
 
-    hmm_mat4 view = get_view_matrix(&state.camera);
+    hmm_mat4 view = lopgl_get_view_matrix();
     hmm_mat4 projection = HMM_Perspective(45.0f, (float)sapp_width() / (float)sapp_height(), 0.1f, 100.0f);
 
     vs_params_t vs_params = {
@@ -176,19 +156,19 @@ void frame(void) {
     sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &vs_params, sizeof(vs_params));
     sg_draw(0, 36, 1);
 
-    render_help(&state.camera);
+    lopgl_render_help();
 
     sg_end_pass();
     sg_commit();
 }
 
 void event(const sapp_event* e) {
-    handle_input(&state.camera, e);
+    lopgl_handle_input(e);
 }
 
 
 void cleanup(void) {
-    sg_shutdown();
+    lopgl_shutdown();
 }
 
 sapp_desc sokol_main(int argc, char* argv[]) {

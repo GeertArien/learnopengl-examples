@@ -2,7 +2,6 @@ fips_begin_app(2-2-1-ambient windowed)
     fips_vs_warning_level(3)
     fips_files(
         1-ambient.c
-        ../utility/camera.c
     )
     sokol_shader(1-ambient.glsl ${slang})
     fips_deps(sokol hmm)
@@ -12,7 +11,6 @@ fips_begin_app(2-2-2-diffuse windowed)
     fips_vs_warning_level(3)
     fips_files(
         2-diffuse.c
-        ../utility/camera.c
     )
     sokol_shader(2-diffuse.glsl ${slang})
     fips_deps(sokol hmm)
@@ -22,7 +20,6 @@ fips_begin_app(2-2-3-specular windowed)
     fips_vs_warning_level(3)
     fips_files(
         3-specular.c
-        ../utility/camera.c
     )
     sokol_shader(3-specular.glsl ${slang})
     fips_deps(sokol hmm)
