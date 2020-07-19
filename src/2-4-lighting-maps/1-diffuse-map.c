@@ -3,13 +3,10 @@
 //------------------------------------------------------------------------------
 #include "sokol_app.h"
 #include "sokol_gfx.h"
-#include "sokol_glue.h"
-#include "sokol_time.h"
-#include "sokol_fetch.h"
-#include "stb/stb_image.h"
 #include "hmm/HandmadeMath.h"
 #include "1-diffuse-map.glsl.h"
-#include "../utility/camera.h"
+#define LOPGL_APP_IMPL
+#include "../lopgl_app.h"
 
 /* application state */
 static struct {
@@ -18,31 +15,18 @@ static struct {
     sg_bindings bind_object;
     sg_bindings bind_light;
     sg_pass_action pass_action;
-    uint64_t last_time;
-    uint64_t delta_time;
-    bool first_mouse;
-    float last_x;
-    float last_y;
-    struct cam_desc camera;
     hmm_vec3 light_pos;
     uint8_t file_buffer[512 * 1024];
 } state;
 
-static void fetch_callback(const sfetch_response_t*);
+static void fail_callback() {
+    state.pass_action = (sg_pass_action) {
+        .colors[0] = { .action = SG_ACTION_CLEAR, .val = { 1.0f, 0.0f, 0.0f, 1.0f } }
+    };
+}
 
 static void init(void) {
-    sg_setup(&(sg_desc){
-        .context = sapp_sgcontext()
-    });
-
-    /* setup sokol-fetch
-        The 1 channel and 1 lane configuration essentially serializes
-        IO requests. Which is just fine for this example. */
-    sfetch_setup(&(sfetch_desc_t){
-        .max_requests = 2,
-        .num_channels = 1,
-        .num_lanes = 1
-    });
+    lopgl_setup();
 
     /* Allocate an image handle, but don't actually initialize the image yet,
        this happens later when the asynchronous file load has finished.
@@ -50,19 +34,6 @@ static void init(void) {
        will be silently dropped.
     */
     state.bind_object.fs_images[SLOT_diffuse_texture] = sg_alloc_image();
-
-    /* flip images vertically after loading */
-    stbi_set_flip_vertically_on_load(true);  
-
-    /* initialize sokol_time */
-    stm_setup();
-
-    // hide mouse cursor
-    sapp_show_mouse(false);
-
-    // set default camera configuration
-    state.first_mouse = true;
-    state.camera = create_camera(HMM_Vec3(0.0f, 0.0f,  3.0f), HMM_Vec3(0.0f, 1.0f,  0.0f), -90.f, 0.0f);
 
     // set object and light configuration
     state.light_pos = HMM_Vec3(1.2f, 1.0f, 2.0f);
@@ -168,69 +139,22 @@ static void init(void) {
 
     sg_image img_id = state.bind_object.fs_images[SLOT_diffuse_texture];
 
-    /* start loading the PNG file */
-    sfetch_send(&(sfetch_request_t){
-        .path = "container2.png",
-        .callback = fetch_callback,
-        .buffer_ptr = state.file_buffer,
-        .buffer_size = sizeof(state.file_buffer),
-        .user_data_ptr = &img_id,
-        .user_data_size = sizeof(img_id)
+    lopgl_load_image(&(lopgl_image_request_t){
+            .path = "container2.png",
+            .img_id = img_id,
+            .buffer_ptr = state.file_buffer,
+            .buffer_size = sizeof(state.file_buffer),
+            .fail_callback = fail_callback
     });
 }
 
-/* The fetch-callback is called by sokol_fetch.h when the data is loaded,
-   or when an error has occurred.
-*/
-static void fetch_callback(const sfetch_response_t* response) {
-    if (response->fetched) {
-        /* the file data has been fetched, since we provided a big-enough
-           buffer we can be sure that all data has been loaded here
-        */
-        int img_width, img_height, num_channels;
-        const int desired_channels = 4;
-        stbi_uc* pixels = stbi_load_from_memory(
-            response->buffer_ptr,
-            (int)response->fetched_size,
-            &img_width, &img_height,
-            &num_channels, desired_channels);
-        if (pixels) {
-            /* we attached the image slot value to the request's user_data */
-            sg_image img_id = *(sg_image*)response->user_data;
-            /* initialize the sokol-gfx texture */
-            sg_init_image(img_id, &(sg_image_desc){
-                .width = img_width,
-                .height = img_height,
-                /* set pixel_format to RGBA8 for WebGL */
-                .pixel_format = SG_PIXELFORMAT_RGBA8,
-                .wrap_u = SG_WRAP_REPEAT,
-                .wrap_v = SG_WRAP_REPEAT,
-                .min_filter = SG_FILTER_LINEAR,
-                .mag_filter = SG_FILTER_LINEAR,
-                .content.subimage[0][0] = {
-                    .ptr = pixels,
-                    .size = img_width * img_height * 4,
-                }
-            });
-            stbi_image_free(pixels);
-        }
-    }
-    else if (response->failed) {
-        // if loading the file failed, set clear color to red
-        state.pass_action = (sg_pass_action) {
-            .colors[0] = { .action = SG_ACTION_CLEAR, .val = { 1.0f, 0.0f, 0.0f, 1.0f } }
-        };
-    }
-}
-
 void frame(void) {
-    sfetch_dowork();
-    state.delta_time = stm_laptime(&state.last_time);
+    lopgl_update();
 
     sg_begin_default_pass(&state.pass_action, sapp_width(), sapp_height());
 
-    hmm_mat4 view = get_view_matrix(&state.camera);
-    hmm_mat4 projection = HMM_Perspective(state.camera.zoom, (float)sapp_width() / (float)sapp_height(), 0.1f, 100.0f);
+    hmm_mat4 view = lopgl_view_matrix();
+    hmm_mat4 projection = HMM_Perspective(lopgl_fov(), (float)sapp_width() / (float)sapp_height(), 0.1f, 100.0f);
 
     vs_params_t vs_params = {
         .view = view,
@@ -244,7 +168,7 @@ void frame(void) {
     sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &vs_params, sizeof(vs_params));
 
     fs_params_t fs_params = {
-        .viewPos = state.camera.position,
+        .viewPos = lopgl_camera_position()
     };
     sg_apply_uniforms(SG_SHADERSTAGE_FS, SLOT_fs_params, &fs_params, sizeof(fs_params));
 
@@ -271,58 +195,18 @@ void frame(void) {
     sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &vs_params, sizeof(vs_params));
     sg_draw(0, 36, 1);
 
+    lopgl_render_help();
+
     sg_end_pass();
     sg_commit();
 }
 
 void event(const sapp_event* e) {
-    if (e->type == SAPP_EVENTTYPE_KEY_DOWN) {
-        if (e->key_code == SAPP_KEYCODE_ESCAPE) {
-            sapp_request_quit();
-        }
-
-        if (e->key_code == SAPP_KEYCODE_SPACE) {
-            bool mouse_shown = sapp_mouse_shown();
-            sapp_show_mouse(!mouse_shown);
-            toggle_camera_movement(&state.camera);
-        }
-
-        float f_delta_time = (float) stm_sec(state.delta_time);
-
-        if (e->key_code == SAPP_KEYCODE_W) {
-            process_keyboard(&state.camera, CAM_MOV_FORWARD, f_delta_time);
-        }
-        if (e->key_code == SAPP_KEYCODE_S) {
-            process_keyboard(&state.camera, CAM_MOV_BACKWARD, f_delta_time);
-        }
-        if (e->key_code == SAPP_KEYCODE_A) {
-            process_keyboard(&state.camera, CAM_MOV_LEFT, f_delta_time);
-        }
-        if (e->key_code == SAPP_KEYCODE_D) {
-            process_keyboard(&state.camera, CAM_MOV_RIGHT, f_delta_time);
-        }
-    }
-    else if (e->type == SAPP_EVENTTYPE_MOUSE_MOVE) {
-        if(state.first_mouse) {
-            state.last_x = e->mouse_x;
-            state.last_y = e->mouse_y;
-            state.first_mouse = false;
-        }
-    
-        float xoffset = e->mouse_x - state.last_x;
-        float yoffset = state.last_y - e->mouse_y; 
-        state.last_x = e->mouse_x;
-        state.last_y = e->mouse_y;
-
-        process_mouse_movement(&state.camera, xoffset, yoffset);
-    }
-    else if (e->type == SAPP_EVENTTYPE_MOUSE_SCROLL) {
-        process_mouse_scroll(&state.camera, e->scroll_y);
-    }
+    lopgl_handle_input(e);
 }
 
 void cleanup(void) {
-    sg_shutdown();
+    lopgl_shutdown();
 }
 
 sapp_desc sokol_main(int argc, char* argv[]) {

@@ -2,7 +2,32 @@
 #define LOPGL_APP_INCLUDED
 
 #include "sokol_app.h"
+#include "sokol_gfx.h"
+#include "sokol_fetch.h"
+#include "stb/stb_image.h"
 #include <hmm/HandmadeMath.h>
+
+/*
+    TODO:
+        - add asserts to check setup has been called
+        - add default values for all structs
+        - use canary?
+        - improve structure and add/update documentation
+*/
+
+/* response callback function signature */
+typedef void(*lopgl_fail_callback_t)();
+
+/* request parameters passed to sfetch_send() */
+typedef struct lopgl_image_request_t {
+    uint32_t _start_canary;
+    const char* path;                       /* filesystem path or HTTP URL (required) */
+    sg_image img_id;
+    void* buffer_ptr;                       /* buffer pointer where data will be loaded into (optional) */
+    uint32_t buffer_size;                   /* buffer size in number of bytes (optional) */
+    lopgl_fail_callback_t fail_callback;    /* response callback function pointer (required) */
+    uint32_t _end_canary;
+} lopgl_image_request_t;
 
 void lopgl_setup();
 
@@ -10,11 +35,19 @@ void lopgl_update();
 
 void lopgl_shutdown();
 
-hmm_mat4 lopgl_get_view_matrix();
+hmm_mat4 lopgl_view_matrix();
+
+float lopgl_fov();
+
+hmm_vec3 lopgl_camera_position();
+
+hmm_vec3 lopgl_camera_direction();
 
 void lopgl_handle_input(const sapp_event* e);
 
 void lopgl_render_help();
+
+void lopgl_load_image();
 
 #endif /*LOPGL_APP_INCLUDED*/
 
@@ -53,11 +86,11 @@ struct orbital_cam {
 
 struct orbital_cam create_orbital_camera(hmm_vec3 target, hmm_vec3 up, float pitch, float heading, float distance);
 
-hmm_mat4 get_view_matrix_orbital(struct orbital_cam* camera);
+hmm_mat4 view_matrix_orbital(struct orbital_cam* camera);
 
 void handle_input_orbital(struct orbital_cam* camera, const sapp_event* e, hmm_vec2 mouse_offset);
 
-const char* get_help_orbital();
+const char* help_orbital();
 
 /*=== FP CAM =======================================================*/
 
@@ -91,13 +124,13 @@ struct fp_cam {
 struct fp_cam create_fp_camera(hmm_vec3 position, hmm_vec3 up, float yaw, float pitch);
 
 // Returns the view matrix calculated using Euler Angles and the LookAt Matrix
-hmm_mat4 get_view_matrix_fp(struct fp_cam* camera);
+hmm_mat4 view_matrix_fp(struct fp_cam* camera);
 
 void handle_input_fp(struct fp_cam* camera, const sapp_event* e, hmm_vec2 mouse_offset);
 
 void update_fp_camera(struct fp_cam* camera, float delta_time);
 
-const char* get_help_fp();
+const char* help_fp();
 
 /*=== APP ==========================================================*/
 
@@ -128,6 +161,18 @@ void lopgl_setup() {
         }
     });
 
+    /* setup sokol-fetch
+        The 1 channel and 1 lane configuration essentially serializes
+        IO requests. Which is just fine for this example. */
+    sfetch_setup(&(sfetch_desc_t){
+        .max_requests = 2,
+        .num_channels = 1,
+        .num_lanes = 1
+    });
+
+    /* flip images vertically after loading */
+    stbi_set_flip_vertically_on_load(true);  
+
     _lopgl.orbital_cam = create_orbital_camera(HMM_Vec3(0.0f, 0.0f,  0.0f), HMM_Vec3(0.0f, 1.0f,  0.0f), 0.0f, 0.0f, 6.0f);
     _lopgl.fp_cam = create_fp_camera(HMM_Vec3(0.0f, 0.0f,  5.0f), HMM_Vec3(0.0f, 1.0f,  0.0f), -90.f, 0.0f);
     _lopgl.fp_enabled = false;
@@ -136,6 +181,8 @@ void lopgl_setup() {
 }
 
 void lopgl_update() {
+    sfetch_dowork();
+
     _lopgl.frame_time = stm_laptime(&_lopgl.time_stamp);
     
     if (_lopgl.fp_enabled) {
@@ -147,12 +194,34 @@ void lopgl_shutdown() {
     sg_shutdown();
 }
 
-hmm_mat4 lopgl_get_view_matrix() {
+hmm_mat4 lopgl_view_matrix() {
     if (_lopgl.fp_enabled) {
-        return get_view_matrix_fp(&_lopgl.fp_cam);
+        return view_matrix_fp(&_lopgl.fp_cam);
     }
     else {
-        return get_view_matrix_orbital(&_lopgl.orbital_cam);
+        return view_matrix_orbital(&_lopgl.orbital_cam);
+    }
+}
+
+float lopgl_fov() {
+    return 45.0f;
+}
+
+hmm_vec3 lopgl_camera_position() {
+    if (_lopgl.fp_enabled) {
+        return _lopgl.fp_cam.position;
+    }
+    else {
+        return _lopgl.orbital_cam.position;
+    }
+}
+
+hmm_vec3 lopgl_camera_direction() {
+    if (_lopgl.fp_enabled) {
+        return _lopgl.fp_cam.front;
+    }
+    else {
+        return HMM_NormalizeVec3(HMM_SubtractVec3(_lopgl.orbital_cam.target, _lopgl.orbital_cam.position));
     }
 }
 
@@ -219,16 +288,78 @@ void lopgl_render_help() {
         sdtx_puts("Switch Cam:\t'C'\n\n");
 
         if (_lopgl.fp_enabled) {
-            sdtx_puts(get_help_fp(&_lopgl.fp_cam));
+            sdtx_puts(help_fp(&_lopgl.fp_cam));
         }
         else {
-            sdtx_puts(get_help_orbital(&_lopgl.orbital_cam));
+            sdtx_puts(help_orbital(&_lopgl.orbital_cam));
         }
 
         sdtx_puts("\nExit:\t\t'ESC'");
     }
     
     sdtx_draw();
+}
+
+typedef struct {
+    sg_image img_id;
+    lopgl_fail_callback_t fail_callback;
+} lopgl_img_request_data;
+
+/* The fetch-callback is called by sokol_fetch.h when the data is loaded,
+   or when an error has occurred.
+*/
+static void image_fetch_callback(const sfetch_response_t* response) {
+    lopgl_img_request_data req_data = *(lopgl_img_request_data*)response->user_data;
+
+    if (response->fetched) {
+        /* the file data has been fetched, since we provided a big-enough
+           buffer we can be sure that all data has been loaded here
+        */
+        int img_width, img_height, num_channels;
+        const int desired_channels = 4;
+        stbi_uc* pixels = stbi_load_from_memory(
+            response->buffer_ptr,
+            (int)response->fetched_size,
+            &img_width, &img_height,
+            &num_channels, desired_channels);
+        if (pixels) {
+            /* initialize the sokol-gfx texture */
+            sg_init_image(req_data.img_id, &(sg_image_desc){
+                .width = img_width,
+                .height = img_height,
+                /* set pixel_format to RGBA8 for WebGL */
+                .pixel_format = SG_PIXELFORMAT_RGBA8,
+                .wrap_u = SG_WRAP_REPEAT,
+                .wrap_v = SG_WRAP_REPEAT,
+                .min_filter = SG_FILTER_LINEAR,
+                .mag_filter = SG_FILTER_LINEAR,
+                .content.subimage[0][0] = {
+                    .ptr = pixels,
+                    .size = img_width * img_height * 4,
+                }
+            });
+            stbi_image_free(pixels);
+        }
+    }
+    else if (response->failed) {
+        req_data.fail_callback();
+    }
+}
+
+void lopgl_load_image(const lopgl_image_request_t* request) {
+    lopgl_img_request_data req_data = {
+        .img_id = request->img_id,
+        .fail_callback = request->fail_callback
+    };
+
+    sfetch_send(&(sfetch_request_t){
+        .path = request->path,
+        .callback = image_fetch_callback,
+        .buffer_ptr = request->buffer_ptr,
+        .buffer_size = request->buffer_size,
+        .user_data_ptr = &req_data,
+        .user_data_size = sizeof(req_data)
+    });
 }
 
 /*=== ORBITAL CAM IMPLEMENTATION ==================================================*/
@@ -276,7 +407,7 @@ struct orbital_cam create_orbital_camera(hmm_vec3 target, hmm_vec3 up, float pit
     return camera;
 }
 
-hmm_mat4 get_view_matrix_orbital(struct orbital_cam* camera) {
+hmm_mat4 view_matrix_orbital(struct orbital_cam* camera) {
     return HMM_LookAt(camera->position, camera->target, camera->up);
 }
 
@@ -315,7 +446,7 @@ void handle_input_orbital(struct orbital_cam* camera, const sapp_event* e, hmm_v
     update_camera_vectors(camera);
 }
 
-const char* get_help_orbital() {
+const char* help_orbital() {
     return  "Look:\t\tleft-mouse-btn\n"
             "Zoom:\t\tmouse-scroll\n";
 }
@@ -382,7 +513,7 @@ struct fp_cam create_fp_camera(hmm_vec3 position, hmm_vec3 up, float yaw, float 
     return camera;
 }
 
-hmm_mat4 get_view_matrix_fp(struct fp_cam* camera) {
+hmm_mat4 view_matrix_fp(struct fp_cam* camera) {
     hmm_vec3 direction = HMM_AddVec3(camera->position, camera->front);
     return HMM_LookAt(camera->position, direction, camera->up);
 }
@@ -470,7 +601,7 @@ void handle_input_fp(struct fp_cam* camera, const sapp_event* e, hmm_vec2 mouse_
     }
 }
 
-const char* get_help_fp() {
+const char* help_fp() {
     return  "Forward:\t'W' '\xf0'\n"
             "Left:\t\t'A' '\xf2\'\n"
             "Back:\t\t'S' '\xf1\'\n"
