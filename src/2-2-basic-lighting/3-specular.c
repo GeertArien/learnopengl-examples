@@ -129,8 +129,8 @@ void frame(void) {
 
     sg_begin_default_pass(&state.pass_action, sapp_width(), sapp_height());
 
-    hmm_mat4 view = lopgl_get_view_matrix();
-    hmm_mat4 projection = HMM_Perspective(lopgl_get_fov(), (float)sapp_width() / (float)sapp_height(), 0.1f, 100.0f);
+    hmm_mat4 view = lopgl_view_matrix();
+    hmm_mat4 projection = HMM_Perspective(lopgl_fov(), (float)sapp_width() / (float)sapp_height(), 0.1f, 100.0f);
 
     vs_params_t vs_params = {
         .view = view,
@@ -145,7 +145,7 @@ void frame(void) {
 
     fs_params_t fs_params = {
         .objectColor = state.object_color,
-        .viewPos = lopgl_get_camera_position(),
+        .viewPos = lopgl_camera_position(),
         .lightColor = state.light_color,
         .lightPos = state.light_pos
     };

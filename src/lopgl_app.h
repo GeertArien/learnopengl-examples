@@ -3,9 +3,7 @@
 
 #include "sokol_app.h"
 #include "sokol_gfx.h"
-#include "sokol_fetch.h"
-#include "stb/stb_image.h"
-#include <hmm/HandmadeMath.h>
+#include "../libs/hmm/HandmadeMath.h"
 
 /*
     TODO:
@@ -55,11 +53,31 @@ void lopgl_load_image();
 /*--- IMPLEMENTATION ---------------------------------------------------------*/
 #ifdef LOPGL_APP_IMPL
 
-#include "sokol_gfx.h"
+#include "sokol_fetch.h"
 #include "sokol_glue.h"
 #include "sokol_time.h"
+
 #define SOKOL_DEBUGTEXT_IMPL
 #include "sokol_debugtext.h"
+#undef SOKOL_DEBUGTEXT_IMPL
+
+#define STB_IMAGE_IMPLEMENTATION
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+#endif
+#include "../libs/stb/stb_image.h"
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+#undef STB_IMAGE_IMPLEMENTATION
+
+
+#define HANDMADE_MATH_IMPLEMENTATION
+#define HANDMADE_MATH_NO_SSE
+#include "../libs/hmm/HandmadeMath.h"
+#undef HANDMADE_MATH_IMPLEMENTATION
+
 #include <stdbool.h>
 
 /*=== ORBITAL CAM ==================================================*/

@@ -1,8 +1,6 @@
 fips_begin_app(2-1-1-scene windowed)
     fips_vs_warning_level(3)
-    fips_files(
-        1-scene.c
-    )
+    fips_files(1-scene.c)
     sokol_shader(shaders.glsl ${slang})
-    fips_deps(sokol hmm)
+    fips_deps(sokol)
 fips_end_app()

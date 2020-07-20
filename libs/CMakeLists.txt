@@ -2,6 +2,4 @@
 # the sokol_config() macro is in the top-level CMakeLists.txt file!
 sokol_config()
 
-add_subdirectory(hmm)
 add_subdirectory(sokol)
-add_subdirectory(stb)

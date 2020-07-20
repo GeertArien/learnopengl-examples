@@ -42,6 +42,9 @@ uniform fs_material {
     float shininess;
 } material;
 
+uniform sampler2D diffuse_texture;
+uniform sampler2D specular_texture;
+
 uniform fs_light {
     vec3 position;  
 
@@ -53,9 +56,6 @@ uniform fs_light {
     float linear;
     float quadratic;
 } light;
-
-uniform sampler2D diffuse_texture;
-uniform sampler2D specular_texture;
 
 void main() {
     // ambient

@@ -129,8 +129,8 @@ void frame(void) {
 
     sg_begin_default_pass(&state.pass_action, sapp_width(), sapp_height());
 
-    hmm_mat4 view = lopgl_get_view_matrix();
-    hmm_mat4 projection = HMM_Perspective(lopgl_get_fov(), (float)sapp_width() / (float)sapp_height(), 0.1f, 100.0f);
+    hmm_mat4 view = lopgl_view_matrix();
+    hmm_mat4 projection = HMM_Perspective(lopgl_fov(), (float)sapp_width() / (float)sapp_height(), 0.1f, 100.0f);
 
     vs_params_t vs_params = {
         .view = view,
