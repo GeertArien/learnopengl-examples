@@ -7,7 +7,8 @@
 #include "sokol_fetch.h"
 #include "sokol_time.h"
 #include "hmm/HandmadeMath.h"
-#include "stb/stb_image.h"
+#define LOPGL_APP_IMPL
+#include "../lopgl_app.h"
 #include "shaders.glsl.h"
 
 /* application state */

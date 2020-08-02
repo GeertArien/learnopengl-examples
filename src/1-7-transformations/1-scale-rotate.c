@@ -6,7 +6,8 @@
 #include "sokol_glue.h"
 #include "sokol_fetch.h"
 #include "hmm/HandmadeMath.h"
-#include "stb/stb_image.h"
+#define LOPGL_APP_IMPL
+#include "../lopgl_app.h"
 #include "transformations.glsl.h"
 
 /* application state */

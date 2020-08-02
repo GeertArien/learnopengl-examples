@@ -5,7 +5,8 @@
 #include "sokol_gfx.h"
 #include "sokol_glue.h"
 #include "sokol_fetch.h"
-#include "stb/stb_image.h"
+#define LOPGL_APP_IMPL
+#include "../lopgl_app.h"
 #include "2-texture-blend.glsl.h"
 
 /*  Mipmaps are left out of this example because currently Sokol does not provide

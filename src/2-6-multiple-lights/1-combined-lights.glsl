@@ -138,15 +138,19 @@ dir_light_t get_directional_light() {
 }
 
 point_light_t get_point_light(int index) {
-    return point_light_t(
-        point_lights.position[index].xyz,
-        point_lights.attenuation[index].x,
-        point_lights.attenuation[index].y,
-        point_lights.attenuation[index].z,
-        point_lights.ambient[index].xyz,
-        point_lights.diffuse[index].xyz,
-        point_lights.specular[index].xyz
-    );
+    for (int i = 0; i < 4; ++i) {
+        if (i == index) {
+            return point_light_t(
+                point_lights.position[i].xyz,
+                point_lights.attenuation[i].x,
+                point_lights.attenuation[i].y,
+                point_lights.attenuation[i].z,
+                point_lights.ambient[i].xyz,
+                point_lights.diffuse[i].xyz,
+                point_lights.specular[i].xyz
+            );
+        }
+    }
 }
 
 spot_light_t get_spot_light() {

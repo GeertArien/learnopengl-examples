@@ -5,7 +5,16 @@
 #include "sokol_gfx.h"
 #include "sokol_glue.h"
 #include "sokol_fetch.h"
-#include "stb/stb_image.h"
+#define STB_IMAGE_IMPLEMENTATION
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+#endif
+#include "../libs/stb/stb_image.h"
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
+#undef STB_IMAGE_IMPLEMENTATION
 #include "1-texture.glsl.h"
 
 /*  Mipmaps are left out of this example because currently Sokol does not provide

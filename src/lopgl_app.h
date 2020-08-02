@@ -4,6 +4,7 @@
 #include "sokol_app.h"
 #include "sokol_gfx.h"
 #include "../libs/hmm/HandmadeMath.h"
+#include "../libs/fast_obj/lopgl_fast_obj.h"
 
 /*
     TODO:
@@ -11,21 +12,36 @@
         - add default values for all structs
         - use canary?
         - improve structure and add/update documentation
+        - add support for obj's with multiple materials
+        - add define to select functionality and reduce binary size
 */
 
-/* response callback function signature */
+/* response fail callback function signature */
 typedef void(*lopgl_fail_callback_t)();
 
-/* request parameters passed to sfetch_send() */
+typedef void(*lopgl_obj_request_callback_t)(fastObjMesh*);
+
+/* request parameters passed to lopgl_load_image() */
 typedef struct lopgl_image_request_t {
     uint32_t _start_canary;
     const char* path;                       /* filesystem path or HTTP URL (required) */
     sg_image img_id;
-    void* buffer_ptr;                       /* buffer pointer where data will be loaded into (optional) */
-    uint32_t buffer_size;                   /* buffer size in number of bytes (optional) */
+    void* buffer_ptr;                       /* buffer pointer where data will be loaded into */
+    uint32_t buffer_size;                   /* buffer size in number of bytes */
     lopgl_fail_callback_t fail_callback;    /* response callback function pointer (required) */
     uint32_t _end_canary;
 } lopgl_image_request_t;
+
+/* request parameters passed to sfetch_send() */
+typedef struct lopgl_obj_request_t {
+    uint32_t _start_canary;
+    const char* path;                       /* filesystem path or HTTP URL (required) */
+    void* buffer_ptr;                       /* buffer pointer where data will be loaded into */
+    uint32_t buffer_size;                   /* buffer size in number of bytes */
+    lopgl_obj_request_callback_t callback;  
+    lopgl_fail_callback_t fail_callback;    /* response callback function pointer (required) */
+    uint32_t _end_canary;
+} lopgl_obj_request_t;
 
 void lopgl_setup();
 
@@ -45,7 +61,9 @@ void lopgl_handle_input(const sapp_event* e);
 
 void lopgl_render_help();
 
-void lopgl_load_image();
+void lopgl_load_image(const lopgl_image_request_t* request);
+
+void lopgl_load_obj(const lopgl_obj_request_t* request);
 
 #endif /*LOPGL_APP_INCLUDED*/
 
@@ -77,6 +95,9 @@ void lopgl_load_image();
 #define HANDMADE_MATH_NO_SSE
 #include "../libs/hmm/HandmadeMath.h"
 #undef HANDMADE_MATH_IMPLEMENTATION
+
+#include "../libs/fast_obj/lopgl_fast_obj.h"
+#define FAST_OBJ_IMPLEMENTATION
 
 #include <stdbool.h>
 
@@ -183,13 +204,13 @@ void lopgl_setup() {
         The 1 channel and 1 lane configuration essentially serializes
         IO requests. Which is just fine for this example. */
     sfetch_setup(&(sfetch_desc_t){
-        .max_requests = 2,
+        .max_requests = 4,
         .num_channels = 1,
         .num_lanes = 1
     });
 
     /* flip images vertically after loading */
-    stbi_set_flip_vertically_on_load(true);  
+    // stbi_set_flip_vertically_on_load(true);  
 
     _lopgl.orbital_cam = create_orbital_camera(HMM_Vec3(0.0f, 0.0f,  0.0f), HMM_Vec3(0.0f, 1.0f,  0.0f), 0.0f, 0.0f, 6.0f);
     _lopgl.fp_cam = create_fp_camera(HMM_Vec3(0.0f, 0.0f,  5.0f), HMM_Vec3(0.0f, 1.0f,  0.0f), -90.f, 0.0f);
@@ -364,6 +385,53 @@ static void image_fetch_callback(const sfetch_response_t* response) {
     }
 }
 
+typedef struct {
+    fastObjMesh* mesh;
+    lopgl_obj_request_callback_t callback;
+    lopgl_fail_callback_t fail_callback;
+    void* buffer_ptr;
+    uint32_t buffer_size;
+} lopgl_obj_request_data;
+
+static void mtl_fetch_callback(const sfetch_response_t* response) {
+    lopgl_obj_request_data req_data = *(lopgl_obj_request_data*)response->user_data;
+
+    if (response->fetched) {
+        fast_obj_mtllib_read(req_data.mesh, response->buffer_ptr, response->fetched_size);
+        req_data.callback(req_data.mesh);
+    }
+    else if (response->failed) {
+        req_data.fail_callback();
+    }
+
+    fast_obj_destroy(req_data.mesh);
+}
+
+static void obj_fetch_callback(const sfetch_response_t* response) {
+    lopgl_obj_request_data req_data = *(lopgl_obj_request_data*)response->user_data;
+
+    if (response->fetched) {
+        /* the file data has been fetched, since we provided a big-enough
+           buffer we can be sure that all data has been loaded here
+        */
+        req_data.mesh = fast_obj_read(response->buffer_ptr, response->fetched_size);
+
+        for (int i = 0; i < req_data.mesh->mtllib_count; ++i) {
+            sfetch_send(&(sfetch_request_t){
+                .path = req_data.mesh->mtllibs[i],
+                .callback = mtl_fetch_callback,
+                .buffer_ptr = req_data.buffer_ptr,
+                .buffer_size = req_data.buffer_size,
+                .user_data_ptr = &req_data,
+                .user_data_size = sizeof(req_data)
+            });
+        }
+    }
+    else if (response->failed) {
+        req_data.fail_callback();
+    }
+}
+
 void lopgl_load_image(const lopgl_image_request_t* request) {
     lopgl_img_request_data req_data = {
         .img_id = request->img_id,
@@ -373,6 +441,25 @@ void lopgl_load_image(const lopgl_image_request_t* request) {
     sfetch_send(&(sfetch_request_t){
         .path = request->path,
         .callback = image_fetch_callback,
+        .buffer_ptr = request->buffer_ptr,
+        .buffer_size = request->buffer_size,
+        .user_data_ptr = &req_data,
+        .user_data_size = sizeof(req_data)
+    });
+}
+
+void lopgl_load_obj(const lopgl_obj_request_t* request) {
+    lopgl_obj_request_data req_data = {
+        .mesh = 0,
+        .callback = request->callback,
+        .fail_callback = request->fail_callback,
+        .buffer_ptr = request->buffer_ptr,
+        .buffer_size = request->buffer_size
+    };
+
+    sfetch_send(&(sfetch_request_t){
+        .path = request->path,
+        .callback = obj_fetch_callback,
         .buffer_ptr = request->buffer_ptr,
         .buffer_size = request->buffer_size,
         .user_data_ptr = &req_data,
