@@ -96,8 +96,9 @@ void lopgl_load_obj(const lopgl_obj_request_t* request);
 #include "../libs/hmm/HandmadeMath.h"
 #undef HANDMADE_MATH_IMPLEMENTATION
 
-#include "../libs/fast_obj/lopgl_fast_obj.h"
 #define FAST_OBJ_IMPLEMENTATION
+#include "../libs/fast_obj/lopgl_fast_obj.h"
+#undef FAST_OBJ_IMPLEMENTATION
 
 #include <stdbool.h>
 
@@ -416,7 +417,7 @@ static void obj_fetch_callback(const sfetch_response_t* response) {
         */
         req_data.mesh = fast_obj_read(response->buffer_ptr, response->fetched_size);
 
-        for (int i = 0; i < req_data.mesh->mtllib_count; ++i) {
+        for (unsigned int i = 0; i < req_data.mesh->mtllib_count; ++i) {
             sfetch_send(&(sfetch_request_t){
                 .path = req_data.mesh->mtllibs[i],
                 .callback = mtl_fetch_callback,

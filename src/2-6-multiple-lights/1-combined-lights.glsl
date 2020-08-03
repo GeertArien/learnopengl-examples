@@ -119,7 +119,7 @@ void main() {
     // phase 1: Directional lighting
     vec3 result = calc_dir_light(get_directional_light(), norm, view_dir);
     // phase 2: Point lights
-    for(int i = 0; i < 3; ++i) {
+    for(int i = 0; i < NR_POINT_LIGHTS; ++i) {
         result += calc_point_light(get_point_light(i), norm, frag_pos, view_dir);
     }
     // phase 3: Spot light
@@ -138,7 +138,9 @@ dir_light_t get_directional_light() {
 }
 
 point_light_t get_point_light(int index) {
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < NR_POINT_LIGHTS; ++i) {
+        // workaround because gles2 only allows dynamic array indices
+        // with constant expressions or loop indices
         if (i == index) {
             return point_light_t(
                 point_lights.position[i].xyz,

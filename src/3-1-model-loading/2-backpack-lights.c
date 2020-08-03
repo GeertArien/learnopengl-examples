@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//  Multiple Lights (1)
+//  Model Loading (1)
 //------------------------------------------------------------------------------
 #include "sokol_app.h"
 #include "sokol_gfx.h"
@@ -206,6 +206,6 @@ sapp_desc sokol_main(int argc, char* argv[]) {
         .width = 800,
         .height = 600,
         .gl_force_gles2 = true,
-        .window_title = "Combined Lights (LearnOpenGL)",
+        .window_title = "Backpack Multiple Lights (LearnOpenGL)",
     };
 }

@@ -1,0 +1,7 @@
+fips_begin_app(4-2-1-object-outlining windowed)
+    fips_vs_warning_level(3)
+    fips_files(1-object-outlining.c)
+    sokol_shader(1-object-outlining.glsl ${slang})
+    fipsutil_copy(textures-assets.yml)
+    fips_deps(sokol)
+fips_end_app()
