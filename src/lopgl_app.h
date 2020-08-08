@@ -26,6 +26,8 @@ typedef struct lopgl_image_request_t {
     uint32_t _start_canary;
     const char* path;                       /* filesystem path or HTTP URL (required) */
     sg_image img_id;
+    sg_wrap wrap_u;
+    sg_wrap wrap_v;
     void* buffer_ptr;                       /* buffer pointer where data will be loaded into */
     uint32_t buffer_size;                   /* buffer size in number of bytes */
     lopgl_fail_callback_t fail_callback;    /* response callback function pointer (required) */
@@ -342,6 +344,8 @@ void lopgl_render_help() {
 
 typedef struct {
     sg_image img_id;
+    sg_wrap wrap_u;
+    sg_wrap wrap_v;
     lopgl_fail_callback_t fail_callback;
 } lopgl_img_request_data;
 
@@ -369,8 +373,8 @@ static void image_fetch_callback(const sfetch_response_t* response) {
                 .height = img_height,
                 /* set pixel_format to RGBA8 for WebGL */
                 .pixel_format = SG_PIXELFORMAT_RGBA8,
-                .wrap_u = SG_WRAP_REPEAT,
-                .wrap_v = SG_WRAP_REPEAT,
+                .wrap_u = req_data.wrap_u,
+                .wrap_v = req_data.wrap_v,
                 .min_filter = SG_FILTER_LINEAR,
                 .mag_filter = SG_FILTER_LINEAR,
                 .content.subimage[0][0] = {
@@ -436,6 +440,8 @@ static void obj_fetch_callback(const sfetch_response_t* response) {
 void lopgl_load_image(const lopgl_image_request_t* request) {
     lopgl_img_request_data req_data = {
         .img_id = request->img_id,
+        .wrap_u = request->wrap_u,
+        .wrap_v = request->wrap_v,
         .fail_callback = request->fail_callback
     };
 

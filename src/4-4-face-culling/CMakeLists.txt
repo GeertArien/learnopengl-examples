@@ -1,0 +1,6 @@
+fips_begin_app(4-4-1-cull-front windowed)
+    fips_vs_warning_level(3)
+    fips_files(1-cull-front.c)
+    sokol_shader(1-cull-front.glsl ${slang})
+    fips_deps(sokol)
+fips_end_app()

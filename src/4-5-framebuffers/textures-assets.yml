@@ -1,0 +1,7 @@
+---
+options:
+  src_dir: ../data
+
+files: 
+  - container.jpg
+  - metal.png

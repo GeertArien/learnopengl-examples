@@ -1,0 +1,7 @@
+fips_begin_app(4-5-1-render-to-texture windowed)
+    fips_vs_warning_level(3)
+    fips_files(1-render-to-texture.c)
+    sokol_shader(1-render-to-texture.glsl ${slang})
+    fipsutil_copy(textures-assets.yml)
+    fips_deps(sokol)
+fips_end_app()

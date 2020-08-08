@@ -1,0 +1,9 @@
+---
+options:
+  src_dir: ../data
+
+files: 
+  - marble.jpg
+  - metal.png
+  - grass.png
+  - transparent_window.png
