@@ -1,0 +1,7 @@
+fips_begin_app(4-6-1-skybox windowed)
+    fips_vs_warning_level(3)
+    fips_files(1-skybox.c)
+    sokol_shader(1-skybox.glsl ${slang})
+    fipsutil_copy(textures-assets.yml)
+    fips_deps(sokol)
+fips_end_app()

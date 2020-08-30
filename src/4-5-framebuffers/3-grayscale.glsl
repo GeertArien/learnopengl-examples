@@ -32,7 +32,7 @@ void main() {
 }
 @end
 
-@fs fs
+@fs fs_offscreen
 in vec2 tex_coords;
 
 out vec4 frag_color;
@@ -44,5 +44,19 @@ void main() {
 }
 @end
 
-@program offscreen vs_offscreen fs
-@program display vs_display fs
+@fs fs_display
+in vec2 tex_coords;
+
+out vec4 frag_color;
+
+uniform sampler2D diffuse_texture;
+
+void main() {
+    vec4 color = texture(diffuse_texture, tex_coords);
+    float average = 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b;
+    frag_color = vec4(average, average, average, 1.0);
+}
+@end
+
+@program offscreen vs_offscreen fs_offscreen
+@program display vs_display fs_display

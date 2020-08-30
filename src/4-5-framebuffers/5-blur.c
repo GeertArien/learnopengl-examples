@@ -1,12 +1,14 @@
 //------------------------------------------------------------------------------
-//  Framebuffers (1)
+//  Framebuffers (5)
 //------------------------------------------------------------------------------
 #include "sokol_app.h"
 #include "sokol_gfx.h"
 #include "hmm/HandmadeMath.h"
-#include "1-render-to-texture.glsl.h"
+#include "5-blur.glsl.h"
 #define LOPGL_APP_IMPL
 #include "../lopgl_app.h"
+
+// TODO: add fallback for non-webgl2 support for all framebuffer examples
 
 /* application state */
 static struct {
@@ -44,7 +46,7 @@ void create_offscreen_pass(int width, int height) {
         .render_target = true,
         .width = width,
         .height = height,
-        .pixel_format = SG_PIXELFORMAT_RGBA8,
+        .pixel_format = SG_PIXELFORMAT_RGBA8, 
         .min_filter = SG_FILTER_LINEAR,
         .mag_filter = SG_FILTER_LINEAR,
         .label = "color-image"
@@ -297,6 +299,6 @@ sapp_desc sokol_main(int argc, char* argv[]) {
         .event_cb = event,
         .width = 800,
         .height = 600,
-        .window_title = "Render To Texture (LearnOpenGL)",
+        .window_title = "Blur (LearnOpenGL)",
     };
 }

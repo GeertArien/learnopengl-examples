@@ -1,12 +1,14 @@
 //------------------------------------------------------------------------------
-//  Framebuffers (1)
+//  Framebuffers (2)
 //------------------------------------------------------------------------------
 #include "sokol_app.h"
 #include "sokol_gfx.h"
 #include "hmm/HandmadeMath.h"
-#include "1-render-to-texture.glsl.h"
+#include "2-inversion.glsl.h"
 #define LOPGL_APP_IMPL
 #include "../lopgl_app.h"
+
+// TODO: add fallback for non-webgl2 support for all framebuffer examples
 
 /* application state */
 static struct {
@@ -297,6 +299,6 @@ sapp_desc sokol_main(int argc, char* argv[]) {
         .event_cb = event,
         .width = 800,
         .height = 600,
-        .window_title = "Render To Texture (LearnOpenGL)",
+        .window_title = "Inversion (LearnOpenGL)",
     };
 }

@@ -1,0 +1,12 @@
+---
+options:
+  src_dir: ../data
+
+files: 
+  - container.jpg
+  - skybox_right.jpg
+  - skybox_left.jpg
+  - skybox_top.jpg
+  - skybox_bottom.jpg
+  - skybox_front.jpg
+  - skybox_back.jpg

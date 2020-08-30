@@ -207,7 +207,7 @@ void lopgl_setup() {
         The 1 channel and 1 lane configuration essentially serializes
         IO requests. Which is just fine for this example. */
     sfetch_setup(&(sfetch_desc_t){
-        .max_requests = 4,
+        .max_requests = 8,
         .num_channels = 1,
         .num_lanes = 1
     });
