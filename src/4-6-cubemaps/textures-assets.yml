@@ -10,3 +10,5 @@ files:
   - skybox_bottom.jpg
   - skybox_front.jpg
   - skybox_back.jpg
+  - backpack.mtl
+  - backpack.obj

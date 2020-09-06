@@ -176,6 +176,16 @@ const char* help_fp();
 
 /*=== APP ==========================================================*/
 
+typedef struct _cubemap_request_t {
+    sg_image img_id;
+    uint8_t* buffer;
+    int buffer_offset;
+    int fetched_sizes[6];
+    int finished_requests;
+    bool failed;
+    lopgl_fail_callback_t fail_callback;
+} _cubemap_request_t;
+
 typedef struct {
     struct orbital_cam orbital_cam;
     struct fp_cam fp_cam;
@@ -186,6 +196,7 @@ typedef struct {
     float last_y;
     uint64_t time_stamp;
     uint64_t frame_time;
+    _cubemap_request_t cubemap_req;
 } lopgl_state_t;
 static lopgl_state_t _lopgl;
 
@@ -379,7 +390,7 @@ static void image_fetch_callback(const sfetch_response_t* response) {
                 .mag_filter = SG_FILTER_LINEAR,
                 .content.subimage[0][0] = {
                     .ptr = pixels,
-                    .size = img_width * img_height * 4,
+                    .size = img_width * img_height * desired_channels,
                 }
             });
             stbi_image_free(pixels);
@@ -472,6 +483,137 @@ void lopgl_load_obj(const lopgl_obj_request_t* request) {
         .user_data_ptr = &req_data,
         .user_data_size = sizeof(req_data)
     });
+}
+
+/*=== LOAD CUBEMAP IMPLEMENTATION ==================================================*/
+
+typedef struct lopgl_cubemap_request_t {
+    uint32_t _start_canary;
+    const char* path_right;                 /* filesystem path or HTTP URL (required) */
+    const char* path_left;                  /* filesystem path or HTTP URL (required) */
+    const char* path_top;                   /* filesystem path or HTTP URL (required) */
+    const char* path_bottom;                /* filesystem path or HTTP URL (required) */
+    const char* path_front;                 /* filesystem path or HTTP URL (required) */
+    const char* path_back;                  /* filesystem path or HTTP URL (required) */
+    sg_image img_id;
+    void* buffer_ptr;                       /* buffer pointer where data will be loaded into */
+    uint32_t buffer_offset;                 /* buffer offset in number of bytes */
+    lopgl_fail_callback_t fail_callback;    /* response callback function pointer (required) */
+    uint32_t _end_canary;
+} lopgl_cubemap_request_t;
+
+typedef struct _cubemap_request_instance_t {
+    int index;
+    _cubemap_request_t* request;
+} _cubemap_request_instance_t;
+
+static bool load_cubemap(_cubemap_request_t* request) {
+    const int desired_channels = 4;
+    int img_widths[6], img_heights[6];
+    stbi_uc* pixels_ptrs[6];
+    sg_image_content img_content;
+
+    for (int i = 0; i < 6; ++i) {
+        int num_channel;
+        pixels_ptrs[i] = stbi_load_from_memory(
+            request->buffer + (i * request->buffer_offset),
+            request->fetched_sizes[i],
+            &img_widths[i], &img_heights[i],
+            &num_channel, desired_channels);    
+
+        img_content.subimage[i][0].ptr = pixels_ptrs[i];
+        img_content.subimage[i][0].size = img_widths[i] * img_heights[i] * desired_channels;
+    }
+
+    bool valid = img_widths[0] > 0 && img_heights[0] > 0;
+
+    for (int i = 1; i < 6; ++i) {
+        if (img_widths[i] != img_widths[0] || img_heights[i] != img_heights[0]) {
+            valid = false;
+            break;
+        }
+    }
+    
+    if (valid) {
+        /* initialize the sokol-gfx texture */
+        sg_init_image(request->img_id, &(sg_image_desc){
+            .type = SG_IMAGETYPE_CUBE,
+            .width = img_widths[0],
+            .height = img_heights[0],
+            /* set pixel_format to RGBA8 for WebGL */
+            .pixel_format = SG_PIXELFORMAT_RGBA8,
+            .wrap_u = SG_WRAP_CLAMP_TO_EDGE,
+            .wrap_v = SG_WRAP_CLAMP_TO_EDGE,
+            .wrap_w = SG_WRAP_CLAMP_TO_EDGE,
+            .min_filter = SG_FILTER_LINEAR,
+            .mag_filter = SG_FILTER_LINEAR,
+            .content = img_content
+        });
+    }
+
+    for (int i = 0; i < 6; ++i) {
+        stbi_image_free(pixels_ptrs[i]);
+    }
+    
+    return valid;
+}
+
+static void cubemap_fetch_callback(const sfetch_response_t* response) {
+    _cubemap_request_instance_t req_inst = *(_cubemap_request_instance_t*)response->user_data;
+    _cubemap_request_t* request = req_inst.request;
+
+    if (response->fetched) {
+        request->fetched_sizes[req_inst.index] = response->fetched_size;
+        ++request->finished_requests;
+    }
+    else if (response->failed) {
+        request->failed = true;
+        ++request->finished_requests;
+    }
+
+    if (request->finished_requests == 6) {
+        if (!request->failed) {
+            request->failed = !load_cubemap(request);
+        }
+        
+        if (request->failed) {
+            request->fail_callback();
+        }
+    }
+}
+
+void lopgl_load_cubemap(lopgl_cubemap_request_t* request) {
+    // TODO: cleanup and limit cubemap requests
+    _lopgl.cubemap_req = (_cubemap_request_t) {
+        .img_id = request->img_id,
+        .buffer = request->buffer_ptr,
+        .buffer_offset = request->buffer_offset,
+        .fail_callback = request->fail_callback
+    };
+
+    const char* cubemap[6] = {
+        request->path_right,
+        request->path_left,
+        request->path_top,
+        request->path_bottom,
+        request->path_front,
+        request->path_back
+    };
+
+    for (int i = 0; i < 6; ++i) {
+        _cubemap_request_instance_t req_instance = {
+            .index = i,
+            .request = &_lopgl.cubemap_req
+        };
+        sfetch_send(&(sfetch_request_t){
+            .path = cubemap[i],
+            .callback = cubemap_fetch_callback,
+            .buffer_ptr = request->buffer_ptr + (i * request->buffer_offset),
+            .buffer_size = request->buffer_offset,
+            .user_data_ptr = &req_instance,
+            .user_data_size = sizeof(req_instance)
+        });
+    }
 }
 
 /*=== ORBITAL CAM IMPLEMENTATION ==================================================*/

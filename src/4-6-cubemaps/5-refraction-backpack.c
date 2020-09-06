@@ -1,21 +1,27 @@
 //------------------------------------------------------------------------------
-//  Cubemaps (1)
+//  Cubemaps (5)
 //------------------------------------------------------------------------------
 #include "sokol_app.h"
 #include "sokol_gfx.h"
 #include "hmm/HandmadeMath.h"
-#include "1-skybox.glsl.h"
+#include "5-refraction-backpack.glsl.h"
 #define LOPGL_APP_IMPL
 #include "../lopgl_app.h"
 
+typedef struct mesh_t {
+    sg_pipeline pip;
+    sg_bindings bind;
+    unsigned int face_count;
+} mesh_t;
+
 /* application state */
 static struct {
-    sg_pipeline pip_cube;
+    mesh_t mesh; 
     sg_pipeline pip_skybox;
-    sg_bindings bind_cube;
     sg_bindings bind_skybox;
     sg_pass_action pass_action;
-    uint8_t file_buffer[1024 * 1024];
+    float vertex_buffer[70000 * 8 * sizeof(float)];
+    uint8_t file_buffer[16 * 1024 * 1024];
     uint8_t cubemap_buffer[6 * 1024 * 1024];
 } state;
 
@@ -25,61 +31,32 @@ static void fail_callback() {
     };
 }
 
-static void init(void) {
-    lopgl_setup();
+static void load_obj_callback(fastObjMesh* mesh) {
+    state.mesh.face_count = mesh->face_count;
 
-    float cube_vertices[] = {
-        // positions          // texture Coords
-        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-         0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+    for (unsigned int i = 0; i < mesh->face_count * 3; ++i) {
+        fastObjIndex vertex = mesh->indices[i];
 
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        unsigned int pos = i * 6;
+        unsigned int v_pos = vertex.p * 3;
+        unsigned int n_pos = vertex.n * 3;
 
-        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        memcpy(state.vertex_buffer + pos, mesh->positions + v_pos, 3 * sizeof(float));
+        memcpy(state.vertex_buffer + pos + 3, mesh->normals + n_pos, 3 * sizeof(float));
+    }
 
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-         0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-         0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-    };
-
-    sg_buffer cube_buffer = sg_make_buffer(&(sg_buffer_desc){
-        .size = sizeof(cube_vertices),
-        .content = cube_vertices,
-        .label = "cube-vertices"
+    sg_buffer mesh_buffer = sg_make_buffer(&(sg_buffer_desc){
+        .size = mesh->face_count * 3 * 6 * sizeof(float),
+        .content = state.vertex_buffer,
+        .label = "backpack-vertices"
     });
     
-    state.bind_cube.vertex_buffers[0] = cube_buffer;
+    state.mesh.bind.vertex_buffers[0] = mesh_buffer;
+}
+
+
+static void init(void) {
+    lopgl_setup();
 
     float skybox_vertices[] = {
         // positions          
@@ -135,19 +112,19 @@ static void init(void) {
     state.bind_skybox.vertex_buffers[0] = skybox_buffer;
 
     /* create a pipeline object for the cube */
-    state.pip_cube = sg_make_pipeline(&(sg_pipeline_desc){
+    state.mesh.pip = sg_make_pipeline(&(sg_pipeline_desc){
         .shader = sg_make_shader(simple_shader_desc()),
         .layout = {
             .attrs = {
                 [ATTR_vs_a_pos].format = SG_VERTEXFORMAT_FLOAT3,
-                [ATTR_vs_a_tex_coords].format = SG_VERTEXFORMAT_FLOAT2
+                [ATTR_vs_a_normal].format = SG_VERTEXFORMAT_FLOAT3
             }
         },
         .depth_stencil = {
             .depth_compare_func = SG_COMPAREFUNC_LESS,
             .depth_write_enabled = true,
         },
-        .label = "cube-pipeline"
+        .label = "mesh-pipeline"
     });
 
     /* create a pipeline object for the skybox */
@@ -169,18 +146,9 @@ static void init(void) {
         .colors[0] = { .action=SG_ACTION_CLEAR, .val={0.1f, 0.1f, 0.1f, 1.0f} }
     };
 
-    sg_image container_img_id = sg_alloc_image();
-    state.bind_cube.fs_images[SLOT_diffuse_texture] = container_img_id;
     sg_image skybox_img_id = sg_alloc_image();
+    state.mesh.bind.fs_images[SLOT_skybox_texture] = skybox_img_id;
     state.bind_skybox.fs_images[SLOT_skybox_texture] = skybox_img_id;
-
-    lopgl_load_image(&(lopgl_image_request_t){
-        .path = "container.jpg",
-        .img_id = container_img_id,
-        .buffer_ptr = state.file_buffer,
-        .buffer_size = sizeof(state.file_buffer),
-        .fail_callback = fail_callback
-    });
     
     lopgl_load_cubemap(&(lopgl_cubemap_request_t){
         .img_id = skybox_img_id,
@@ -193,6 +161,14 @@ static void init(void) {
         .buffer_ptr = state.cubemap_buffer,
         .buffer_offset = 1024 * 1024,
         .fail_callback = fail_callback
+    });
+
+    lopgl_load_obj(&(lopgl_obj_request_t){
+        .path = "backpack.obj",
+        .callback = load_obj_callback,
+        .fail_callback = fail_callback,
+        .buffer_ptr = state.file_buffer,
+        .buffer_size = sizeof(state.file_buffer),
     });
 }
 
@@ -210,11 +186,18 @@ void frame(void) {
         .projection = projection
     };
     
-    sg_apply_pipeline(state.pip_cube);
-    sg_apply_bindings(&state.bind_cube);
+    if (state.mesh.face_count > 0) {
+        sg_apply_pipeline(state.mesh.pip);
+        sg_apply_bindings(&state.mesh.bind);
 
-    sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &vs_params, sizeof(vs_params));
-    sg_draw(0, 36, 1);
+        fs_params_t fs_params = {
+            .camera_pos = lopgl_camera_position()
+        };
+
+        sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &vs_params, sizeof(vs_params));
+        sg_apply_uniforms(SG_SHADERSTAGE_FS, SLOT_fs_params, &fs_params, sizeof(fs_params));
+        sg_draw(0, 3 * state.mesh.face_count, 1);
+    }
 
     // remove translation from view matrix
     vs_params.view.Elements[3][0] = 0.0f;
@@ -250,6 +233,6 @@ sapp_desc sokol_main(int argc, char* argv[]) {
         .width = 800,
         .height = 600,
         .gl_force_gles2 = true,
-        .window_title = "Skybox (LearnOpenGL)",
+        .window_title = "Refraction Backpack (LearnOpenGL)",
     };
 }
