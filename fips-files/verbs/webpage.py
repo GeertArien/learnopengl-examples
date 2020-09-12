@@ -12,52 +12,106 @@ from mod import log, util, project, emscripten, android
 # items attributes
 items = [
     [ 'Getting started', [
-        [ 'Hello Window', 'https://learnopengl.com/Getting-started/Hello-Window', '2-3-hello-window', [
-            [ 'rendering', '2-3-1-rendering', '1-rendering.c', None],
+        [ 'Hello Window', 'https://learnopengl.com/Getting-started/Hello-Window', '1-3-hello-window', [
+            [ 'rendering', '1-3-1-rendering', '1-rendering.c', None],
         ]],
-        [ 'Hello Triangle', 'https://learnopengl.com/Getting-started/Hello-Triangle', '2-4-hello-triangle', [
-            [ 'triangle', '2-4-1-triangle', '1-triangle.c', '1-triangle.glsl'],
-            [ 'quad', '2-4-2-quad', '2-quad.c', '1-quad.glsl'],
-            [ 'quad-wireframe', '2-4-3-quad-wireframe', '3-quad-wireframe.c', '3-quad-wireframe.glsl']
+        [ 'Hello Triangle', 'https://learnopengl.com/Getting-started/Hello-Triangle', '1-4-hello-triangle', [
+            [ 'triangle', '1-4-1-triangle', '1-triangle.c', '1-triangle.glsl'],
+            [ 'quad', '1-4-2-quad', '2-quad.c', '1-quad.glsl'],
+            [ 'quad-wireframe', '1-4-3-quad-wireframe', '3-quad-wireframe.c', '3-quad-wireframe.glsl']
         ]],
-        [ 'Shaders', 'https://learnopengl.com/Getting-started/Shaders', '2-5-shaders', [
-            [ 'in-out', '2-5-1-in-out', '1-in-out.c', '1-in-out.glsl'],
-            [ 'uniforms', '2-5-2-uniforms', '2-uniforms.c', '2-uniforms.glsl'],
-            [ 'attributes', '2-5-3-attributes', '3-attributes.c', '3-attributes.glsl']
+        [ 'Shaders', 'https://learnopengl.com/Getting-started/Shaders', '1-5-shaders', [
+            [ 'in-out', '1-5-1-in-out', '1-in-out.c', '1-in-out.glsl'],
+            [ 'uniforms', '1-5-2-uniforms', '2-uniforms.c', '2-uniforms.glsl'],
+            [ 'attributes', '1-5-3-attributes', '3-attributes.c', '3-attributes.glsl']
         ]],
-        [ 'Textures', 'https://learnopengl.com/Getting-started/Textures', '2-6-textures', [
-            [ 'texture', '2-6-1-texture', '1-texture.c', '1-texture.glsl'],
-            [ 'texture-blend', '2-6-2-texture-blend', '2-texture-blend.c', '2-texture-blend.glsl'],
-            [ 'multiple-textures', '2-6-3-multiple-textures', '3-multiple-textures.c', '3-multiple-textures.glsl']
+        [ 'Textures', 'https://learnopengl.com/Getting-started/Textures', '1-6-textures', [
+            [ 'texture', '1-6-1-texture', '1-texture.c', '1-texture.glsl'],
+            [ 'texture-blend', '1-6-2-texture-blend', '2-texture-blend.c', '2-texture-blend.glsl'],
+            [ 'multiple-textures', '1-6-3-multiple-textures', '3-multiple-textures.c', '3-multiple-textures.glsl']
         ]],
-        [ 'Transformations', 'https://learnopengl.com/Getting-started/Transformations', '2-7-transformations', [
-            [ 'scale-rotate', '2-7-1-scale-rotate', '1-scale-rotate.c', 'transformations.glsl'],
-            [ 'rotate-translate', '2-7-2-rotate-translate', '2-rotate-translate.c', 'transformations.glsl'],
+        [ 'Transformations', 'https://learnopengl.com/Getting-started/Transformations', '1-7-transformations', [
+            [ 'scale-rotate', '1-7-1-scale-rotate', '1-scale-rotate.c', 'transformations.glsl'],
+            [ 'rotate-translate', '1-7-2-rotate-translate', '2-rotate-translate.c', 'transformations.glsl'],
         ]],
-        [ 'Coordinate Systems', 'https://learnopengl.com/Getting-started/Coordinate-Systems', '2-8-coordinate-systems', [
-            [ 'plane', '2-8-1-plane', '1-plane.c', 'shaders.glsl'],
-            [ 'cube', '2-8-2-cube', '2-cube.c', 'shaders.glsl'],
-            [ 'more-cubes', '2-8-3-more-cubes', '3-more-cubes.c', 'shaders.glsl']
+        [ 'Coordinate Systems', 'https://learnopengl.com/Getting-started/Coordinate-Systems', '1-8-coordinate-systems', [
+            [ 'plane', '1-8-1-plane', '1-plane.c', 'shaders.glsl'],
+            [ 'cube', '1-8-2-cube', '2-cube.c', 'shaders.glsl'],
+            [ 'more-cubes', '1-8-3-more-cubes', '3-more-cubes.c', 'shaders.glsl']
         ]],
-        [ 'Camera', 'https://learnopengl.com/Getting-started/Camera', '2-9-camera', [
-            [ 'lookat', '2-9-1-lookat', '1-lookat.c', 'shaders.glsl'],
-            [ 'walk', '2-9-2-walk', '2-walk.c', 'shaders.glsl'],
-            [ 'look', '2-9-3-look', '3-look.c', 'shaders.glsl']
+        [ 'Camera', 'https://learnopengl.com/Getting-started/Camera', '1-9-camera', [
+            [ 'lookat', '1-9-1-lookat', '1-lookat.c', 'shaders.glsl'],
+            [ 'walk', '1-9-2-walk', '2-walk.c', 'shaders.glsl'],
+            [ 'look', '1-9-3-look', '3-look.c', 'shaders.glsl']
         ]]
     ]],
     [ 'Lighting', [
-        [ 'Colors', 'https://learnopengl.com/Lighting/Colors', '3-1-colors', [
-            [ 'scene', '3-1-1-scene', '1-scene.c', 'shaders.glsl']
+        [ 'Colors', 'https://learnopengl.com/Lighting/Colors', '2-1-colors', [
+            [ 'scene', '2-1-1-scene', '1-scene.c', 'shaders.glsl']
         ]],
-        [ 'Basic Lighting', 'https://learnopengl.com/Lighting/Basic-Lighting', '3-2-basic-lighting', [
-            [ 'ambient', '3-2-1-ambient', '1-ambient.c', '1-ambient.glsl'],
-            [ 'diffuse', '3-2-2-diffuse', '2-diffuse.c', '2-diffuse.glsl'],
-            [ 'specular', '3-2-3-specular', '3-specular.c', '3-specular.glsl']
+        [ 'Basic Lighting', 'https://learnopengl.com/Lighting/Basic-Lighting', '2-2-basic-lighting', [
+            [ 'ambient', '2-2-1-ambient', '1-ambient.c', '1-ambient.glsl'],
+            [ 'diffuse', '2-2-2-diffuse', '2-diffuse.c', '2-diffuse.glsl'],
+            [ 'specular', '2-2-3-specular', '3-specular.c', '3-specular.glsl']
         ]],
-        [ 'Materials', 'https://learnopengl.com/Lighting/Materials', '3-3-materials', [
-            [ 'material', '3-3-1-material', '1-material.c', '1-material.glsl'],
-            [ 'light', '3-3-2-light', '2-light.c', '2-light.glsl'],
-            [ 'light-colors', '3-3-3-light-colors', '3-light-colors.c', '3-light-colors.glsl']
+        [ 'Materials', 'https://learnopengl.com/Lighting/Materials', '2-3-materials', [
+            [ 'material', '2-3-1-material', '1-material.c', '1-material.glsl'],
+            [ 'light', '2-3-2-light', '2-light.c', '2-light.glsl'],
+            [ 'light-colors', '2-3-3-light-colors', '3-light-colors.c', '3-light-colors.glsl']
+        ]],
+        [ 'Lighting Maps', 'https://learnopengl.com/Lighting/Lighting-maps', '2-4-lighting-maps', [
+            [ 'diffuse-map', '2-4-1-diffuse-map', '1-diffuse-map.c', '1-diffuse-map.glsl'],
+            [ 'specular-map', '2-4-2-specular-map', '2-specular-map.c', '2-specular-map.glsl'],
+        ]],
+        [ 'Light Casters', 'https://learnopengl.com/Lighting/Light-casters', '2-5-light-casters', [
+            [ 'directional-light', '2-5-1-directional-light', '1-directional-light.c', '1-directional-light.glsl'],
+            [ 'point-light', '2-5-2-point-light', '2-point-light.c', '2-point-light.glsl'],
+            [ 'spot-light', '2-5-3-spot-light', '3-spot-light.c', '3-spot-light.glsl'],
+            [ 'soft-spot-light', '2-5-4-soft-spot-light', '4-soft-spot-light.c', '4-soft-spot-light.glsl'],
+        ]],
+        [ 'Multiple Lights', 'https://learnopengl.com/Lighting/Multiple-lights', '2-6-multiple-lights', [
+            [ 'combined-lights', '2-6-1-combined-lights', '1-combined-lights.c', '1-combined-lights.glsl'],
+        ]]
+    ]],
+    [ 'Model Loading', [
+        [ 'Model', 'https://learnopengl.com/Model-Loading/Model', '3-1-model', [
+            [ 'backpack-diffuse', '3-1-1-backpack-diffuse', '1-backpack-diffuse.c', '1-backpack-diffuse.glsl'],
+            [ 'backpack-lights', '3-1-2-backpack-lights', '2-backpack-lights.c', '2-backpack-lights.glsl']
+        ]]
+    ]],
+    [ 'Advanced OpenGL', [
+        [ 'Depth Testing', 'https://learnopengl.com/Advanced-OpenGL/Depth-testing', '4-1-depth-testing', [
+            [ 'depth-always', '4-1-1-depth-always', '1-depth-always.c', '1-depth-always.glsl'],
+            [ 'depth-less', '4-1-2-depth-less', '2-depth-less.c', '2-depth-less.glsl'],
+            [ 'depth-buffer', '4-1-3-depth-buffer', '3-depth-buffer.c', '3-depth-buffer.glsl'],
+            [ 'linear-depth-buffer', '4-1-4-linear-depth-buffer', '2-linear-depth-buffer.c', '2-linear-depth-buffer.glsl']
+        ]],
+        [ 'Stencil Testing', 'https://learnopengl.com/Advanced-OpenGL/Stencil-testing', '4-2-stencil-testing', [
+            [ 'object-outlining', '4-2-1-object-outlining', '1-object-outlining.c', '1-object-outlining.glsl'],
+        ]],
+        [ 'Blending', 'https://learnopengl.com/Advanced-OpenGL/Blending', '4-3-blending', [
+            [ 'grass-opaque', '4-3-1-grass-opaque', '1-grass-opaque.c', '1-grass-opaque.glsl'],
+            [ 'grass-transparent', '4-3-2-grass-transparent', '2-grass-transparent.c', '2-grass-transparent.glsl'],
+            [ 'blending', '4-3-3-blending', '3-blending.c', '3-blending.glsl'],
+            [ 'blending-sorted', '4-3-4-blending-sorted', '4-blending-sorted.c', '4-blending-sorted.glsl']
+        ]],
+        [ 'Face Culling', 'https://learnopengl.com/Advanced-OpenGL/Face-culling', '4-4-face-culling', [
+            [ 'cull-front', '4-4-1-cull-front', '1-cull-front.c', '1-cull-front.glsl']
+        ]],
+        [ 'Framebuffers', 'https://learnopengl.com/Advanced-OpenGL/Framebuffers', '4-5-framebuffers', [
+            [ 'render-to-texture', '4-5-1-render-to-texture', '1-render-to-texture.c', '1-render-to-texture.glsl'],
+            [ 'inversion', '4-5-2-inversion', '2-inversion.c', '2-inversion.glsl'],
+            [ 'grayscale', '4-5-3-grayscale', '3-grayscale.c', '3-grayscale.glsl'],
+            [ 'sharpen', '4-5-4-sharpen', '4-sharpen.c', '4-sharpen.glsl'],
+            [ 'blur', '4-5-5-blur', '5-blur.c', '5-blur.glsl'],
+            [ 'edge-detection', '4-5-6-edge-detection', '6-edge-detection.c', '6-edge-detection.glsl']
+        ]],
+        [ 'Cubemaps', 'https://learnopengl.com/Advanced-OpenGL/Cubemaps', '4-6-cubemaps', [
+            [ 'skybox', '4-6-1-skybox', '1-skybox.c', '1-skybox.glsl'],
+            [ 'relfection-cube', '4-6-2-reflection-cube', '2-reflection-cube.c', '2-reflection-cube.glsl'],
+            [ 'relfection-backpack', '4-6-3-reflection-backpack', '3-reflection-backpack.c', '3-reflection-backpack.glsl'],
+            [ 'refraction-cube', '4-6-4-refraction-cube', '4-refraction-cube.c', '4-refraction-cube.glsl'],
+            [ 'refraction-backpack', '4-6-5-refraction-backpack', '5-refraction-backpack.c', '5-refraction-backpack.glsl'],
         ]]
     ]]
 ]
@@ -65,7 +119,23 @@ items = [
 # assets that must also be copied
 assets = [
     "awesomeface.png",
-    "container.jpg"
+    "container.jpg",
+    "container2.png",
+    "container2_specular.png",
+    "backpack.mtl",
+    "backpack.obj",
+    "backpack_diffuse.jpg",
+    "backpack_specular.jpg",
+    "marble.jpg",
+    "metal.png",
+    "grass.png",
+    "transparent_window.png",
+    "skybox_right.jpg",
+    "skybox_left.jpg",
+    "skybox_top.jpg",
+    "skybox_bottom.jpg",
+    "skybox_front.jpg",
+    "skybox_back.jpg",
 ]
 
 # webpage template arguments

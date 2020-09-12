@@ -20,8 +20,8 @@ static struct {
     sg_pipeline pip_skybox;
     sg_bindings bind_skybox;
     sg_pass_action pass_action;
-    float vertex_buffer[70000 * 8 * sizeof(float)];
-    uint8_t file_buffer[16 * 1024 * 1024];
+    float vertex_buffer[70000 * 6 * sizeof(float)];
+    uint8_t file_buffer[8 * 1024 * 1024];
     uint8_t cubemap_buffer[6 * 1024 * 1024];
 } state;
 
