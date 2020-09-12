@@ -191,6 +191,7 @@ typedef struct {
     struct fp_cam fp_cam;
     bool fp_enabled;
     bool show_help;
+    bool hide_ui;
     bool first_mouse;
     float last_x;
     float last_y;
@@ -231,6 +232,7 @@ void lopgl_setup() {
     _lopgl.fp_enabled = false;
     _lopgl.first_mouse = true;
     _lopgl.show_help = false;
+    _lopgl.hide_ui = false;
 }
 
 void lopgl_update() {
@@ -286,6 +288,9 @@ void lopgl_handle_input(const sapp_event* e) {
         else if (e->key_code == SAPP_KEYCODE_H) {
             _lopgl.show_help = !_lopgl.show_help;
         }
+        else if (e->key_code == SAPP_KEYCODE_U) {
+            _lopgl.hide_ui = !_lopgl.hide_ui;
+        }
         else if (e->key_code == SAPP_KEYCODE_ESCAPE) {
             sapp_request_quit();
         }
@@ -315,6 +320,10 @@ void lopgl_handle_input(const sapp_event* e) {
 }
 
 void lopgl_render_help() {
+    if (_lopgl.hide_ui) {
+        return;
+    }
+
     sdtx_canvas(sapp_width()*0.5f, sapp_height()*0.5f);
     sdtx_origin(0.25f, 0.25f);
     sdtx_home();
