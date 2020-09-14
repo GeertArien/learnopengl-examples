@@ -45,6 +45,21 @@ typedef struct lopgl_obj_request_t {
     uint32_t _end_canary;
 } lopgl_obj_request_t;
 
+typedef struct lopgl_cubemap_request_t {
+    uint32_t _start_canary;
+    const char* path_right;                 /* filesystem path or HTTP URL (required) */
+    const char* path_left;                  /* filesystem path or HTTP URL (required) */
+    const char* path_top;                   /* filesystem path or HTTP URL (required) */
+    const char* path_bottom;                /* filesystem path or HTTP URL (required) */
+    const char* path_front;                 /* filesystem path or HTTP URL (required) */
+    const char* path_back;                  /* filesystem path or HTTP URL (required) */
+    sg_image img_id;
+    uint8_t* buffer_ptr;                       /* buffer pointer where data will be loaded into */
+    uint32_t buffer_offset;                 /* buffer offset in number of bytes */
+    lopgl_fail_callback_t fail_callback;    /* response callback function pointer (required) */
+    uint32_t _end_canary;
+} lopgl_cubemap_request_t;
+
 void lopgl_setup();
 
 void lopgl_update();
@@ -495,21 +510,6 @@ void lopgl_load_obj(const lopgl_obj_request_t* request) {
 }
 
 /*=== LOAD CUBEMAP IMPLEMENTATION ==================================================*/
-
-typedef struct lopgl_cubemap_request_t {
-    uint32_t _start_canary;
-    const char* path_right;                 /* filesystem path or HTTP URL (required) */
-    const char* path_left;                  /* filesystem path or HTTP URL (required) */
-    const char* path_top;                   /* filesystem path or HTTP URL (required) */
-    const char* path_bottom;                /* filesystem path or HTTP URL (required) */
-    const char* path_front;                 /* filesystem path or HTTP URL (required) */
-    const char* path_back;                  /* filesystem path or HTTP URL (required) */
-    sg_image img_id;
-    void* buffer_ptr;                       /* buffer pointer where data will be loaded into */
-    uint32_t buffer_offset;                 /* buffer offset in number of bytes */
-    lopgl_fail_callback_t fail_callback;    /* response callback function pointer (required) */
-    uint32_t _end_canary;
-} lopgl_cubemap_request_t;
 
 typedef struct _cubemap_request_instance_t {
     int index;
