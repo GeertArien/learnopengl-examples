@@ -2,12 +2,12 @@
 
 **Unofficial** cross platform examples for [learnopengl.com](https://learnopengl.com/)
 
-[Live Demos](https://learnopengl.com/)
+[Live Demos](https://www.geertarien.com/learnopengl-examples-html5/)
 
 - written in C.
 - shader dialect GLSL v450
 - runs on OSX, Linux, Windows and web (emscripten) from the same source
-- uses [Sokol libraries]{https://github.com/floooh/sokol) for cross platform support
+- uses [Sokol libraries](https://github.com/floooh/sokol) for cross platform support
 
 
 ## Building 
@@ -16,7 +16,10 @@
 
 #### Requirements
 
-* [Clang](https://clang.llvm.org/), [GCC](https://gcc.gnu.org/) or [MSBuild](https://github.com/Microsoft/msbuild)
+* a C development environment:
+    - OSX: Xcode + command line tools
+    - Linux: make/ninja + gcc/clang
+    - Windows: Visual Studio
 * [CMake](https://cmake.org/)
 * [Python](https://www.python.org/)
 * [Git](https://git-scm.com/)
@@ -56,7 +59,6 @@ one of the webgl2 configs: _webgl2-wasm-ninja-debug_ or _webgl2-wasm-ninja-relea
 > ./fips setup emscripten
 > ./fips set config webgl2-wasm-ninja-debug
 > ./fips build
-> ./
 ```
 
 

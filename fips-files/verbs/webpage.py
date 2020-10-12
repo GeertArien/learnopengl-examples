@@ -1,6 +1,7 @@
 """fips verb to build the examples webpage"""
 
 import os
+import datetime
 import yaml
 import shutil
 import subprocess
@@ -192,7 +193,7 @@ def deploy_webpage(fips_dir, proj_dir, webpage_dir) :
     # populate the html template, and write to the build directory
     with open(proj_dir + '/webpage/index.html', 'r') as f:
         templ = Template(f.read())
-    html = templ.safe_substitute(samples=content)
+    html = templ.safe_substitute(samples=content, date=datetime.date.today().strftime("%B %d %Y"))
     with open(webpage_dir + '/index.html', 'w') as f :
         f.write(html)
 

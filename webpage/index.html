@@ -2,6 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Learn OpenGL Examples</title>
 <link rel="icon" type="image/png" href="favicon.png"/>
 <style type="text/css">
@@ -36,6 +37,10 @@
 p,
 pre {
     margin: 1em 0;
+}
+
+ul {
+    padding-left: 40px;
 }
 
 hr {
@@ -380,7 +385,20 @@ figure a {
 </nav>
 </header>
 <main>
+    <section id="intro">
+        <p>
+            <b>Unofficial</b> WebGL examples for <a href="https://learnopengl.com/">learnopengl.com</a>
+        </p>
+        <ul>
+            <li> written in C, compiled to WebAssembly </li>
+            <li> shader dialect GLSL v450, cross-compiled to GLSL v100 (WebGL) and GLSL v300es (WebGL2) </li>
+            <li> uses <a href="https://github.com/floooh/sokol">Sokol libraries</a> for cross platform support </li>
+            <li> last updated: ${date} </i>
+        </ul>
+    </section>
+
     ${samples}
+
 </main>
 </body>
 </html>
