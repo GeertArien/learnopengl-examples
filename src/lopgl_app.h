@@ -377,6 +377,24 @@ void lopgl_render_help() {
     sdtx_draw();
 }
 
+void lopgl_render_gles2_fallback(void) {
+    const sg_pass_action pass_action = {
+        .colors[0] = { .action = SG_ACTION_CLEAR, .val = { 1.0f, 0.0f, 0.0f, 1.0f } },
+    };
+    sg_begin_default_pass(&pass_action, sapp_width(), sapp_height());
+    
+    sdtx_canvas(sapp_width()*0.5f, sapp_height()*0.5f);
+    sdtx_origin(0.25f, 0.25f);
+    sdtx_home();
+    sdtx_color4b(0xff, 0xff, 0xff, 0xff);
+    sdtx_puts("This browser does not support WebGL 2.\n");
+    sdtx_puts("Try Chrome, Edge or Firefox.");
+    sdtx_draw();
+
+    sg_end_pass();
+    sg_commit();
+}
+
 typedef struct {
     sg_image img_id;
     sg_wrap wrap_u;

@@ -8,8 +8,6 @@
 #define LOPGL_APP_IMPL
 #include "../lopgl_app.h"
 
-// TODO: add fallback for non-webgl2 support for all framebuffer examples
-
 /* application state */
 static struct {
     struct {
@@ -71,6 +69,11 @@ void create_offscreen_pass(int width, int height) {
 
 static void init(void) {
     lopgl_setup();
+    
+    if (sapp_gles2()) {
+        /* this demo needs GLES3/WebGL, the offscreen framebuffer/texture is not a power of 2 */
+        return;
+    }
 
     /* a render pass with one color- and one depth-attachment image */
     create_offscreen_pass(sapp_width(), sapp_height());
@@ -233,6 +236,12 @@ static void init(void) {
 }
 
 void frame(void) {
+    /* can't do anything useful on GLES2/WebGL */
+    if (sapp_gles2()) {
+        lopgl_render_gles2_fallback();
+        return;
+    }
+
     lopgl_update();
 
     hmm_mat4 view = lopgl_view_matrix();
