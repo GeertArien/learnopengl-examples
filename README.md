@@ -23,6 +23,7 @@
 * [CMake](https://cmake.org/)
 * [Python](https://www.python.org/)
 * [Git](https://git-scm.com/)
+* **Linux:** libxi-dev libxcursor-dev
 
 #### How to Build
 
@@ -67,6 +68,12 @@ one of the webgl2 configs: _webgl2-wasm-ninja-debug_ or _webgl2-wasm-ninja-relea
 Fips supports CLion, Visual Studio, Visual Studio Code and XCode as provided by cmake:
 
 ```bash
+> ./fips set config linux-clion-debug
+> ./fips gen
+> ./fips open
+```
+
+```bash
 > ./fips set config win64-vstudio-debug
 > ./fips gen
 > ./fips open
@@ -74,12 +81,6 @@ Fips supports CLion, Visual Studio, Visual Studio Code and XCode as provided by 
 
 ```bash
 > ./fips set config win64-vscode-debug
-> ./fips gen
-> ./fips open
-```
-
-```bash
-> ./fips set config linux-clion-debug
 > ./fips gen
 > ./fips open
 ```
