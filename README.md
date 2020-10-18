@@ -16,14 +16,14 @@
 
 #### Requirements
 
-* a C development environment:
+* a **C development environment**:
     - OSX: Xcode + command line tools
     - Linux: make/ninja + gcc/clang
     - Windows: Visual Studio
 * [CMake](https://cmake.org/)
 * [Python](https://www.python.org/)
 * [Git](https://git-scm.com/)
-* **Linux:** libxi-dev libxcursor-dev
+* **Linux only:** libgl-dev libx11-dev libxi-dev libxcursor-dev
 
 #### How to Build
 
