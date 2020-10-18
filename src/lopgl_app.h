@@ -208,8 +208,8 @@ typedef struct {
     bool show_help;
     bool hide_ui;
     bool first_mouse;
-    float last_x;
-    float last_y;
+    hmm_vec2 last_mouse;
+    hmm_vec2 last_touch[SAPP_MAX_TOUCHPOINTS];
     uint64_t time_stamp;
     uint64_t frame_time;
     _cubemap_request_t cubemap_req;
@@ -315,15 +315,15 @@ void lopgl_handle_input(const sapp_event* e) {
 
     if (e->type == SAPP_EVENTTYPE_MOUSE_MOVE) {
         if (!_lopgl.first_mouse) {
-            mouse_offset.X = e->mouse_x - _lopgl.last_x;
-            mouse_offset.Y = _lopgl.last_y - e->mouse_y;
+            mouse_offset.X = e->mouse_x - _lopgl.last_mouse.X;
+            mouse_offset.Y = _lopgl.last_mouse.Y - e->mouse_y;
         }
         else {
             _lopgl.first_mouse = false;
         }
 
-        _lopgl.last_x = e->mouse_x;
-        _lopgl.last_y = e->mouse_y;
+        _lopgl.last_mouse.X = e->mouse_x;
+        _lopgl.last_mouse.Y = e->mouse_y;
     }
 
     if (_lopgl.fp_enabled) {
@@ -722,6 +722,56 @@ void handle_input_orbital(struct orbital_cam* camera, const sapp_event* e, hmm_v
     }
     else if (e->type == SAPP_EVENTTYPE_MOUSE_SCROLL) {
         zoom_orbital_camera(camera, e->scroll_y);
+    }
+    else if (e->type == SAPP_EVENTTYPE_TOUCHES_BEGAN) {
+        for (int i = 0; i < e->num_touches; ++i) {
+            const sapp_touchpoint* touch = &e->touches[i];
+            _lopgl.last_touch[touch->identifier].X = touch->pos_x;
+            _lopgl.last_touch[touch->identifier].Y = touch->pos_y;
+        }
+    }
+    else if (e->type == SAPP_EVENTTYPE_TOUCHES_MOVED) {
+        if (e->num_touches == 1) {
+            const sapp_touchpoint* touch = &e->touches[0];
+            hmm_vec2* last_touch = &_lopgl.last_touch[touch->identifier];
+
+            hmm_vec2 mouse_offset = HMM_Vec2(0.0f, 0.0f);
+
+            mouse_offset.X = touch->pos_x - last_touch->X;
+            mouse_offset.Y = last_touch->Y - touch->pos_y;
+
+            // reduce speed of touch controls
+            mouse_offset.X *= 0.3;
+            mouse_offset.Y *= 0.3;
+
+            move_orbital_camera(camera, mouse_offset);
+        }
+        else if(e->num_touches == 2) {
+            const sapp_touchpoint* touch0 = &e->touches[0];
+            const sapp_touchpoint* touch1 = &e->touches[1];
+
+            const hmm_vec2 v0 = HMM_Vec2(touch0->pos_x, touch0->pos_y);
+            const hmm_vec2 v1 = HMM_Vec2(touch1->pos_x, touch1->pos_y);
+
+            const hmm_vec2* prev_v0 = &_lopgl.last_touch[touch0->identifier];
+            const hmm_vec2* prev_v1 = &_lopgl.last_touch[touch1->identifier];
+
+            const float length0 = HMM_LengthVec2(HMM_SubtractVec2(v1, v0));
+            const float length1 = HMM_LengthVec2(HMM_SubtractVec2(*prev_v1, *prev_v0));
+
+            float diff = length0 - length1;
+            // reduce speed of touch controls
+            diff *= 0.1;
+
+            zoom_orbital_camera(camera, diff);
+        }
+
+        // update all touch coords
+        for (int i = 0; i < e->num_touches; ++i) {
+            const sapp_touchpoint* touch = &e->touches[i];
+            _lopgl.last_touch[touch->identifier].X = touch->pos_x;
+            _lopgl.last_touch[touch->identifier].Y = touch->pos_y;
+        }
     }
 
     update_camera_vectors(camera);
