@@ -1,0 +1,13 @@
+fips_begin_app(4-8-1-point-size windowed)
+    fips_vs_warning_level(3)
+    fips_files(1-point-size.c)
+    sokol_shader(1-point-size.glsl ${slang})
+    fips_deps(sokol)
+fips_end_app()
+
+fips_begin_app(4-8-2-frag-coord windowed)
+    fips_vs_warning_level(3)
+    fips_files(2-frag-coord.c)
+    sokol_shader(2-frag-coord.glsl ${slang})
+    fips_deps(sokol)
+fips_end_app()
