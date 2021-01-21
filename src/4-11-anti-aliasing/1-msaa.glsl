@@ -1,4 +1,3 @@
-@ctype vec3 hmm_vec3
 @ctype mat4 hmm_mat4
 
 @vs vs
@@ -16,17 +15,10 @@ void main() {
 @end
 
 @fs fs
-uniform fs_params {
-    float center_x;
-};
-
 out vec4 FragColor;
 
 void main() {
-    if(gl_FragCoord.x < center_x)
-        FragColor = vec4(1.0, 0.0, 0.0, 1.0);
-    else
-        FragColor = vec4(0.0, 1.0, 0.0, 1.0);
+    FragColor = vec4(0.0, 1.0, 0.0, 1.0);
 }
 @end
 

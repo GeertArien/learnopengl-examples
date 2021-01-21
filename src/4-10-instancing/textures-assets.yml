@@ -1,0 +1,11 @@
+---
+options:
+  src_dir: ../data
+
+files: 
+  - planet.mtl
+  - planet.obj
+  - mars.png
+  - rock.mtl
+  - rock.obj
+  - rock.png

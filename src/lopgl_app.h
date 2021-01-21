@@ -14,12 +14,35 @@
         - improve structure and add/update documentation
         - add support for obj's with multiple materials
         - add define to select functionality and reduce binary size
+        - use get/set to configure cameras
 */
+
+typedef struct lopgl_orbital_cam_desc {
+    hmm_vec3 target; 
+    hmm_vec3 up;
+    float pitch;
+    float heading;
+    float distance;
+} lopgl_orbital_cam_desc_t;
+
+typedef struct lopgl_fp_cam_desc {
+    hmm_vec3 position;
+    hmm_vec3 up;
+    float yaw;
+    float pitch;
+} lopgl_fp_cam_desc_t;
 
 /* response fail callback function signature */
 typedef void(*lopgl_fail_callback_t)();
 
-typedef void(*lopgl_obj_request_callback_t)(fastObjMesh*);
+typedef struct lopgl_obj_response_t {
+    uint32_t _start_canary;
+    fastObjMesh* mesh; 
+    void* user_data_ptr;
+    uint32_t _end_canary;
+} lopgl_obj_response_t;
+
+typedef void(*lopgl_obj_request_callback_t)(lopgl_obj_response_t*);
 
 /* request parameters passed to lopgl_load_image() */
 typedef struct lopgl_image_request_t {
@@ -40,6 +63,7 @@ typedef struct lopgl_obj_request_t {
     const char* path;                       /* filesystem path or HTTP URL (required) */
     void* buffer_ptr;                       /* buffer pointer where data will be loaded into */
     uint32_t buffer_size;                   /* buffer size in number of bytes */
+    const void* user_data_ptr;              /* pointer to a POD user-data block which will be memcpy'd(!) (optional) */
     lopgl_obj_request_callback_t callback;  
     lopgl_fail_callback_t fail_callback;    /* response callback function pointer (required) */
     uint32_t _end_canary;
@@ -61,6 +85,8 @@ typedef struct lopgl_cubemap_request_t {
 } lopgl_cubemap_request_t;
 
 void lopgl_setup();
+
+void lopgl_setup_advanced(lopgl_orbital_cam_desc_t* orbital_desc, lopgl_fp_cam_desc_t* fp_desc);
 
 void lopgl_update();
 
@@ -141,7 +167,7 @@ struct orbital_cam {
     bool enable_rotate;
 };
 
-struct orbital_cam create_orbital_camera(hmm_vec3 target, hmm_vec3 up, float pitch, float heading, float distance);
+struct orbital_cam create_orbital_camera(lopgl_orbital_cam_desc_t* desc);
 
 hmm_mat4 view_matrix_orbital(struct orbital_cam* camera);
 
@@ -178,7 +204,7 @@ struct fp_cam {
     bool move_right;
 };
 
-struct fp_cam create_fp_camera(hmm_vec3 position, hmm_vec3 up, float yaw, float pitch);
+struct fp_cam create_fp_camera(lopgl_fp_cam_desc_t* desc);
 
 // Returns the view matrix calculated using Euler Angles and the LookAt Matrix
 hmm_mat4 view_matrix_fp(struct fp_cam* camera);
@@ -214,9 +240,26 @@ typedef struct {
     uint64_t frame_time;
     _cubemap_request_t cubemap_req;
 } lopgl_state_t;
+
 static lopgl_state_t _lopgl;
 
 void lopgl_setup() {
+    lopgl_setup_advanced(&(lopgl_orbital_cam_desc_t){
+        .target = HMM_Vec3(0.0f, 0.0f,  0.0f),
+        .up = HMM_Vec3(0.0f, 1.0f,  0.0f),
+        .pitch = 0.f,
+        .heading = 0.f,
+        .distance = 6.f
+    },
+    &(lopgl_fp_cam_desc_t){
+        .position = HMM_Vec3(0.0f, 0.0f,  6.0f),
+        .up = HMM_Vec3(0.0f, 1.0f,  0.0f),
+        .yaw = -90.f,
+        .pitch = 0.f
+    });
+}
+
+void lopgl_setup_advanced(lopgl_orbital_cam_desc_t* orbital_desc, lopgl_fp_cam_desc_t* fp_desc) {
     sg_setup(&(sg_desc){
         .context = sapp_sgcontext()
     });
@@ -242,8 +285,8 @@ void lopgl_setup() {
     /* flip images vertically after loading */
     // stbi_set_flip_vertically_on_load(true);  
 
-    _lopgl.orbital_cam = create_orbital_camera(HMM_Vec3(0.0f, 0.0f,  0.0f), HMM_Vec3(0.0f, 1.0f,  0.0f), 0.0f, 0.0f, 6.0f);
-    _lopgl.fp_cam = create_fp_camera(HMM_Vec3(0.0f, 0.0f,  5.0f), HMM_Vec3(0.0f, 1.0f,  0.0f), -90.f, 0.0f);
+    _lopgl.orbital_cam = create_orbital_camera(orbital_desc);
+    _lopgl.fp_cam = create_fp_camera(fp_desc);
     _lopgl.fp_enabled = false;
     _lopgl.first_mouse = true;
     _lopgl.show_help = false;
@@ -449,6 +492,7 @@ typedef struct {
     lopgl_fail_callback_t fail_callback;
     void* buffer_ptr;
     uint32_t buffer_size;
+    void* user_data_ptr;
 } lopgl_obj_request_data;
 
 static void mtl_fetch_callback(const sfetch_response_t* response) {
@@ -456,7 +500,10 @@ static void mtl_fetch_callback(const sfetch_response_t* response) {
 
     if (response->fetched) {
         fast_obj_mtllib_read(req_data.mesh, response->buffer_ptr, response->fetched_size);
-        req_data.callback(req_data.mesh);
+        req_data.callback(&(lopgl_obj_response_t){
+            .mesh = req_data.mesh,
+            .user_data_ptr = req_data.user_data_ptr
+        });
     }
     else if (response->failed) {
         req_data.fail_callback();
@@ -514,7 +561,8 @@ void lopgl_load_obj(const lopgl_obj_request_t* request) {
         .callback = request->callback,
         .fail_callback = request->fail_callback,
         .buffer_ptr = request->buffer_ptr,
-        .buffer_size = request->buffer_size
+        .buffer_size = request->buffer_size,
+        .user_data_ptr = request->user_data_ptr
     };
 
     sfetch_send(&(sfetch_request_t){
@@ -665,13 +713,13 @@ static void update_camera_vectors(struct orbital_cam* camera) {
     );
 }
 
-struct orbital_cam create_orbital_camera(hmm_vec3 target, hmm_vec3 up, float pitch, float heading, float distance) {
+struct orbital_cam create_orbital_camera(lopgl_orbital_cam_desc_t* desc) {
     struct orbital_cam camera;
     // camera attributes
-    camera.target = target;
-    camera.up = up;
-    camera.polar = HMM_Vec2(pitch, heading);
-    camera.distance = distance;
+    camera.target = desc->target;
+    camera.up = desc->up;
+    camera.polar = HMM_Vec2(desc->pitch, desc->heading);
+    camera.distance = desc->distance;
     // limits
     camera.min_pitch = MIN_PITCH_ORB;
 	camera.max_pitch = MAX_PITCH_ORB;
@@ -815,13 +863,13 @@ static void update_fp_camera_vectors(struct fp_cam* camera) {
     camera->up    = HMM_NormalizeVec3(HMM_Cross(camera->right, camera->front));
 }
 
-struct fp_cam create_fp_camera(hmm_vec3 position, hmm_vec3 up, float yaw, float pitch) {
+struct fp_cam create_fp_camera(lopgl_fp_cam_desc_t* desc) {
     struct fp_cam camera;
     // camera attributes
-    camera.position = position;
-    camera.world_up = up;
-    camera.yaw = yaw;
-    camera.pitch = pitch;
+    camera.position = desc->position;
+    camera.world_up = desc->up;
+    camera.yaw = desc->yaw;
+    camera.pitch = desc->pitch;
     camera.zoom = ZOOM;
     // limits
     camera.min_pitch = MIN_PITCH;
