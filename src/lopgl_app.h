@@ -377,6 +377,10 @@ void lopgl_handle_input(const sapp_event* e) {
     }
 }
 
+bool lopgl_ui_visible() {
+    return !_lopgl.hide_ui;
+}
+
 void lopgl_render_help() {
     if (_lopgl.hide_ui) {
         return;
@@ -393,18 +397,9 @@ void lopgl_render_help() {
     else {
         sdtx_color4b(0x00, 0xff, 0x00, 0xaf);
         sdtx_puts(  "Hide help:\t'H'\n\n");
-
         sdtx_printf("Frame Time:\t%.3f\n\n", stm_ms(_lopgl.frame_time));
-
-        if (_lopgl.fp_enabled) {
-            sdtx_puts(  "Orbital Cam\t[ ]\n"
-                        "FP Cam\t\t[*]\n\n");
-        }
-        else {
-            sdtx_puts(  "Orbital Cam\t[*]\n"
-                        "FP Cam\t\t[ ]\n\n");
-        }
-
+        sdtx_printf("Orbital Cam\t[%c]\n", _lopgl.fp_enabled ? ' ': '*');
+        sdtx_printf("FP Cam\t\t[%c]\n\n", _lopgl.fp_enabled ? '*' : ' ');
         sdtx_puts("Switch Cam:\t'C'\n\n");
 
         if (_lopgl.fp_enabled) {
