@@ -1,0 +1,6 @@
+fips_begin_app(4-9-1-lines windowed)
+    fips_vs_warning_level(3)
+    fips_files(1-lines.c)
+    sokol_shader(1-lines.glsl ${slang})
+    fips_deps(sokol)
+fips_end_app()

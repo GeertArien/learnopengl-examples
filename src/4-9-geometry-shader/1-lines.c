@@ -1,0 +1,101 @@
+//------------------------------------------------------------------------------
+//  Geometry Shader (1)
+//------------------------------------------------------------------------------
+#include "sokol_app.h"
+#include "sokol_gfx.h"
+#include "sokol_glue.h"
+#define HANDMADE_MATH_IMPLEMENTATION
+#define HANDMADE_MATH_NO_SSE
+#include "../libs/hmm/HandmadeMath.h"
+#include "1-lines.glsl.h"
+#include "string.h"
+
+/* application state */
+static struct {
+    sg_pipeline pip;
+    sg_bindings bind;
+    sg_pass_action pass_action;
+} state;
+
+static void init(void) {
+    // TODO: use lopgl_app ?
+    sg_setup(&(sg_desc){
+        .context = sapp_sgcontext()
+    });
+
+    /* create shader from code-generated sg_shader_desc */
+    sg_shader shd = sg_make_shader(simple_shader_desc());
+
+    /* a pipeline state object */
+    state.pip = sg_make_pipeline(&(sg_pipeline_desc){
+        .shader = shd,
+        .layout = {
+            .attrs = {
+                /* dummy vertex attribute, otherwise sokol complains */
+                [ATTR_vs_a_unused].format = SG_VERTEXFORMAT_FLOAT,
+            }
+        },
+        .primitive_type = SG_PRIMITIVETYPE_LINES,
+        .label = "vertices-pipeline"
+    });
+
+    /* a pass action to clear framebuffer */
+    state.pass_action = (sg_pass_action) {
+        .colors[0] = { .action=SG_ACTION_CLEAR, .val={0.1f, 0.1f, 0.1f, 1.0f} }
+    };
+
+    float positions[] = {
+        -0.5f, 0.5f, // top-left
+        0.5f,  0.5f, // top-right
+        0.5f,  -0.5f, // bottom-right
+        -0.5f, -0.5f  // bottom-left
+    };
+
+    state.bind.vs_images[SLOT_positions_texture] = sg_make_image(&(sg_image_desc){
+        .width = 16,
+        .height = 1,
+        .pixel_format = SG_PIXELFORMAT_RG32F,
+        /* set filter to nearest, webgl2 does not support filtering for float textures */
+        .mag_filter = SG_FILTER_NEAREST,
+        .min_filter = SG_FILTER_NEAREST,
+        .content.subimage[0][0] = {
+            .ptr = positions,
+            .size = sizeof(positions)
+        },
+        .label = "positions-texture"
+    });
+}
+
+void frame(void) {
+    sg_begin_default_pass(&state.pass_action, sapp_width(), sapp_height());
+    sg_apply_pipeline(state.pip);
+    sg_apply_bindings(&state.bind);
+    sg_draw(0, 8, 1);
+    sg_end_pass();
+    sg_commit();
+}
+
+void cleanup(void) {
+    sg_shutdown();
+}
+
+void event(const sapp_event* e) {
+    if (e->type == SAPP_EVENTTYPE_KEY_DOWN) {
+        if (e->key_code == SAPP_KEYCODE_ESCAPE) {
+            sapp_request_quit();
+        }
+    }
+}
+
+sapp_desc sokol_main(int argc, char* argv[]) {
+    return (sapp_desc){
+        .init_cb = init,
+        .frame_cb = frame,
+        .cleanup_cb = cleanup,
+        .event_cb = event,
+        .width = 800,
+        .height = 600,
+        .gl_force_gles2 = true,
+        .window_title = "Lines (LearnOpenGL)",
+    };
+}
