@@ -116,16 +116,20 @@ static void init(void) {
             .fail_callback = fail_callback
     });
 
-    /* checkerboard texture */
-    uint32_t pixels[21*21];
+    /* checkerboard texture, needs to be power of two for webgl 1 */
+    uint32_t pixels[16*16];
 
-    for (size_t i = 0; i < 21*21; ++i) {
-        pixels[i] = i % 2 == 0 ? 0xFFD9D9D9 : 0xFFA8A8A8;
+    for (size_t i = 0; i < 16; ++i) {
+        uint32_t c0 = i % 2 == 0 ? 0xFFD9D9D9 : 0xFFA8A8A8;
+        uint32_t c1 = i % 2 == 0 ? 0xFFA8A8A8 : 0xFFD9D9D9; 
+        for (size_t j = 0; j < 16; ++j) { 
+            pixels[i*16 + j] = j % 2 == 0 ? c0 : c1;
+        }
     }
 
     state.bind.fs_images[SLOT_back_texture] = sg_make_image(&(sg_image_desc){
-        .width = 21,
-        .height = 21,
+        .width = 16,
+        .height = 16,
         .content.subimage[0][0] = {
             .ptr = pixels,
             .size = sizeof(pixels)

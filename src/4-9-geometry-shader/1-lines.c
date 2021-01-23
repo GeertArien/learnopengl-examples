@@ -4,9 +4,8 @@
 #include "sokol_app.h"
 #include "sokol_gfx.h"
 #include "sokol_glue.h"
-#define HANDMADE_MATH_IMPLEMENTATION
-#define HANDMADE_MATH_NO_SSE
-#include "../libs/hmm/HandmadeMath.h"
+#define LOPGL_APP_IMPL
+#include "../lopgl_app.h"
 #include "1-lines.glsl.h"
 #include "string.h"
 
@@ -18,10 +17,12 @@ static struct {
 } state;
 
 static void init(void) {
-    // TODO: use lopgl_app ?
-    sg_setup(&(sg_desc){
-        .context = sapp_sgcontext()
-    });
+    lopgl_setup();
+
+    if (sapp_gles2()) {
+        /* this demo needs GLES3/WebGL because we are using texelFetch in the shader */
+        return;
+    }
 
     /* create shader from code-generated sg_shader_desc */
     sg_shader shd = sg_make_shader(simple_shader_desc());
@@ -32,7 +33,7 @@ static void init(void) {
         .layout = {
             .attrs = {
                 /* dummy vertex attribute, otherwise sokol complains */
-                [ATTR_vs_a_unused].format = SG_VERTEXFORMAT_FLOAT,
+                [ATTR_vs_a_dummy].format = SG_VERTEXFORMAT_FLOAT,
             }
         },
         .primitive_type = SG_PRIMITIVETYPE_LINES,
@@ -67,6 +68,12 @@ static void init(void) {
 }
 
 void frame(void) {
+     /* can't do anything useful on GLES2/WebGL */
+    if (sapp_gles2()) {
+        lopgl_render_gles2_fallback();
+        return;
+    }
+
     sg_begin_default_pass(&state.pass_action, sapp_width(), sapp_height());
     sg_apply_pipeline(state.pip);
     sg_apply_bindings(&state.bind);
@@ -95,7 +102,6 @@ sapp_desc sokol_main(int argc, char* argv[]) {
         .event_cb = event,
         .width = 800,
         .height = 600,
-        .gl_force_gles2 = true,
         .window_title = "Lines (LearnOpenGL)",
     };
 }

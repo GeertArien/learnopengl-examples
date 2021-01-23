@@ -7,11 +7,11 @@ in vec3 a_normal;
 in vec2 a_tex_coords;
 
 // declare an interface block; see 'Advanced GLSL' for what these are.
-out VS_OUT {
+out INTERFACE {
     vec3 frag_pos;
     vec3 normal;
     vec2 tex_coords;
-} vs_out;
+} inter;
 
 uniform vs_params {
     mat4 view;
@@ -20,18 +20,18 @@ uniform vs_params {
 
 void main() {
     gl_Position = projection * view * vec4(a_pos, 1.0);
-    vs_out.frag_pos = a_pos;
-    vs_out.normal = a_normal;
-    vs_out.tex_coords = a_tex_coords;
+    inter.frag_pos = a_pos;
+    inter.normal = a_normal;
+    inter.tex_coords = a_tex_coords;
 }
 @end
 
 @fs fs
-in VS_OUT {
+in INTERFACE {
     vec3 frag_pos;
     vec3 normal;
     vec2 tex_coords;
-} fs_in;
+} inter;
 
 out vec4 frag_color;
 
@@ -44,16 +44,16 @@ uniform fs_params {
 uniform sampler2D floor_texture;
 
 void main() {           
-    vec3 color = texture(floor_texture, fs_in.tex_coords).rgb;
+    vec3 color = texture(floor_texture, inter.tex_coords).rgb;
     // ambient
     vec3 ambient = 0.05 * color;
     // diffuse
-    vec3 light_dir = normalize(light_pos - fs_in.frag_pos);
-    vec3 normal = normalize(fs_in.normal);
+    vec3 light_dir = normalize(light_pos - inter.frag_pos);
+    vec3 normal = normalize(inter.normal);
     float diff = max(dot(light_dir, normal), 0.0);
     vec3 diffuse = diff * color;
     // specular
-    vec3 view_dir = normalize(view_pos - fs_in.frag_pos);
+    vec3 view_dir = normalize(view_pos - inter.frag_pos);
     vec3 reflect_dir = reflect(-light_dir, normal);
     float spec = 0.0;
 
