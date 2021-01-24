@@ -26,7 +26,7 @@ static struct {
     uint8_t file_buffer_planet[1024 * 1024];
     uint8_t file_buffer_rock[1024 * 1024];
     uint8_t file_buffer_img[3 * 1024 * 1024];
-    float vertex_buffer[1024 * 8 * sizeof(float)];
+    float vertex_buffer[1024 * 3 * 8];
 } state;
 
 static void fail_callback() {

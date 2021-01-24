@@ -1,10 +1,10 @@
 //------------------------------------------------------------------------------
-//  Model Loading (1)
+//  Geometry Shader (3)
 //------------------------------------------------------------------------------
 #include "sokol_app.h"
 #include "sokol_gfx.h"
 #include "hmm/HandmadeMath.h"
-#include "1-backpack-diffuse.glsl.h"
+#include "3-exploding-object.glsl.h"
 #define LOPGL_APP_IMPL
 #include "../lopgl_app.h"
 #include "fast_obj/lopgl_fast_obj.h"
@@ -22,7 +22,7 @@ static struct {
     mesh_t mesh; 
     sg_pass_action pass_action;
     uint8_t file_buffer[16 * 1024 * 1024];
-    float vertex_buffer[70000 * 3 * 8];
+    float vertex_buffer[70000 * 3 * 5];
 } state;
 
 static void fail_callback() {
@@ -38,23 +38,28 @@ static void load_obj_callback(lopgl_obj_response_t* response) {
     for (unsigned int i = 0; i < mesh->face_count * 3; ++i) {
         fastObjIndex vertex = mesh->indices[i];
 
-        unsigned int pos = i * 8;
+        unsigned int pos = i * 5;
         unsigned int v_pos = vertex.p * 3;
-        unsigned int n_pos = vertex.n * 3;
         unsigned int t_pos = vertex.t * 2;
 
         memcpy(state.vertex_buffer + pos, mesh->positions + v_pos, 3 * sizeof(float));
-        memcpy(state.vertex_buffer + pos + 3, mesh->normals + n_pos, 3 * sizeof(float));
-        memcpy(state.vertex_buffer + pos + 6, mesh->texcoords + t_pos, 2 * sizeof(float));
+        memcpy(state.vertex_buffer + pos + 3, mesh->texcoords + t_pos, 2 * sizeof(float));
     }
 
-    sg_buffer cube_buffer = sg_make_buffer(&(sg_buffer_desc){
-        .size = mesh->face_count * 3 * 8 * sizeof(float),
-        .content = state.vertex_buffer,
-        .label = "backpack-vertices"
+    state.mesh.bind.vs_images[SLOT_vertex_texture] = sg_make_image(&(sg_image_desc){
+        .width = 1024,
+        .height = mesh->face_count*3*5/1024 + 1,
+        .pixel_format = SG_PIXELFORMAT_R32F,
+        /* set filter to nearest, webgl2 does not support filtering for float textures */
+        .mag_filter = SG_FILTER_NEAREST,
+        .min_filter = SG_FILTER_NEAREST,
+        .content.subimage[0][0] = {
+            .ptr = state.vertex_buffer,
+            .size = sizeof(state.vertex_buffer)
+        },
+        .label = "color-texture"
     });
-    
-    state.mesh.bind.vertex_buffers[0] = cube_buffer;
+
     sg_image img_id = sg_alloc_image();
     state.mesh.bind.fs_images[SLOT_diffuse_texture] = img_id;
 
@@ -70,6 +75,11 @@ static void load_obj_callback(lopgl_obj_response_t* response) {
 static void init(void) {
     lopgl_setup();
 
+    if (sapp_gles2()) {
+        /* this demo needs GLES3/WebGL because we are using texelFetch in the shader */
+        return;
+    }
+
     /* create shader from code-generated sg_shader_desc */
     sg_shader phong_shd = sg_make_shader(phong_shader_desc());
 
@@ -79,13 +89,8 @@ static void init(void) {
         /* if the vertex layout doesn't have gaps, don't need to provide strides and offsets */
         .layout = {
             .attrs = {
-                [ATTR_vs_a_pos].format = SG_VERTEXFORMAT_FLOAT3,
-                [ATTR_vs_a_tex_coords] = {
-                    .format = SG_VERTEXFORMAT_FLOAT2,
-                    .offset = 24
-                }
+                [ATTR_vs_a_dummy].format = SG_VERTEXFORMAT_FLOAT,
             },
-            .buffers[0].stride = 32
         },
         .depth_stencil = {
             .depth_compare_func = SG_COMPAREFUNC_LESS_EQUAL,
@@ -109,6 +114,12 @@ static void init(void) {
 }
 
 void frame(void) {
+    /* can't do anything useful on GLES2/WebGL */
+    if (sapp_gles2()) {
+        lopgl_render_gles2_fallback();
+        return;
+    }
+
     lopgl_update();
 
     sg_begin_default_pass(&state.pass_action, sapp_width(), sapp_height());
@@ -120,7 +131,8 @@ void frame(void) {
         vs_params_t vs_params = {
             .model = HMM_Mat4d(1.f),
             .view = view,
-            .projection = projection
+            .projection = projection,
+            .time = (float)stm_sec(stm_now())
         };
 
         sg_apply_pipeline(state.mesh.pip);
@@ -153,7 +165,6 @@ sapp_desc sokol_main(int argc, char* argv[]) {
         .event_cb = event,
         .width = 800,
         .height = 600,
-        .gl_force_gles2 = true,
-        .window_title = "Backpack Diffuse (LearnOpenGL)",
+        .window_title = "Exploding Object (LearnOpenGL)",
     };
 }

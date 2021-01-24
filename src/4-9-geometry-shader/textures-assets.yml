@@ -1,0 +1,9 @@
+---
+options:
+  src_dir: ../data
+
+files: 
+  - backpack.mtl
+  - backpack.obj
+  - backpack_diffuse.jpg
+  - backpack_specular.jpg

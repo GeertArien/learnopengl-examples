@@ -1,12 +1,12 @@
 //------------------------------------------------------------------------------
-//  Geometry Shader (1)
+//  Geometry Shader (2)
 //------------------------------------------------------------------------------
 #include "sokol_app.h"
 #include "sokol_gfx.h"
 #include "sokol_glue.h"
 #define LOPGL_APP_IMPL
 #include "../lopgl_app.h"
-#include "1-lines.glsl.h"
+#include "2-houses.glsl.h"
 #include "string.h"
 
 /* application state */
@@ -36,7 +36,7 @@ static void init(void) {
                 [ATTR_vs_a_dummy].format = SG_VERTEXFORMAT_FLOAT,
             }
         },
-        .primitive_type = SG_PRIMITIVETYPE_LINES,
+        .primitive_type = SG_PRIMITIVETYPE_TRIANGLES,
         .label = "vertices-pipeline"
     });
 
@@ -52,8 +52,8 @@ static void init(void) {
         -0.5f, -0.5f  // bottom-left
     };
 
-    state.bind.vs_images[SLOT_positions_texture] = sg_make_image(&(sg_image_desc){
-        .width = 16,
+    state.bind.vs_images[SLOT_position_texture] = sg_make_image(&(sg_image_desc){
+        .width = 4,
         .height = 1,
         .pixel_format = SG_PIXELFORMAT_RG32F,
         /* set filter to nearest, webgl2 does not support filtering for float textures */
@@ -65,10 +65,31 @@ static void init(void) {
         },
         .label = "positions-texture"
     });
+
+    float colors[] = {
+        1.0f, 0.0f, 0.0f, 1.0,  // top-left
+        0.0f, 1.0f, 0.0f, 1.0,  // top-right
+        0.0f, 0.0f, 1.0f, 1.0,  // bottom-right
+        1.0f, 1.0f, 0.0f, 1.0   // bottom-left
+    };
+
+    state.bind.vs_images[SLOT_color_texture] = sg_make_image(&(sg_image_desc){
+        .width = 4,
+        .height = 1,
+        .pixel_format = SG_PIXELFORMAT_RGBA32F,
+        /* set filter to nearest, webgl2 does not support filtering for float textures */
+        .mag_filter = SG_FILTER_NEAREST,
+        .min_filter = SG_FILTER_NEAREST,
+        .content.subimage[0][0] = {
+            .ptr = colors,
+            .size = sizeof(colors)
+        },
+        .label = "color-texture"
+    });
 }
 
 void frame(void) {
-    /* can't do anything useful on GLES2/WebGL */
+     /* can't do anything useful on GLES2/WebGL */
     if (sapp_gles2()) {
         lopgl_render_gles2_fallback();
         return;
@@ -77,7 +98,7 @@ void frame(void) {
     sg_begin_default_pass(&state.pass_action, sapp_width(), sapp_height());
     sg_apply_pipeline(state.pip);
     sg_apply_bindings(&state.bind);
-    sg_draw(0, 4*2, 1);
+    sg_draw(0, 4*9, 1);
     sg_end_pass();
     sg_commit();
 }
@@ -102,6 +123,6 @@ sapp_desc sokol_main(int argc, char* argv[]) {
         .event_cb = event,
         .width = 800,
         .height = 600,
-        .window_title = "Lines (LearnOpenGL)",
+        .window_title = "Houses (LearnOpenGL)",
     };
 }

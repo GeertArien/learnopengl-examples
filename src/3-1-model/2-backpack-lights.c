@@ -23,7 +23,7 @@ static struct {
     sg_pass_action pass_action;
     hmm_vec4 light_positions[4];
     uint8_t file_buffer[16 * 1024 * 1024];
-    float vertex_buffer[70000 * 8 * sizeof(float)];
+    float vertex_buffer[70000 * 3 * 8];
 } state;
 
 static void fail_callback() {

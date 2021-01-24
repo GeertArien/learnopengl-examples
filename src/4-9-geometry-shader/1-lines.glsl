@@ -6,7 +6,7 @@ in float a_dummy;       // add a dummy vertex attribute otherwise sokol complain
 uniform sampler2D positions_texture;
 
 void main() {
-    uint index = gl_VertexID / 2;
+    uint index = gl_VertexID >> 1;      // divide by 2
     vec4 pos = texelFetch(positions_texture, ivec2(index, 0), 0);
 
     pos.x = gl_VertexID % 2 == 0 ? pos.x - 0.1 : pos.x + 0.1;

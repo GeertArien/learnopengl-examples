@@ -1,10 +1,10 @@
 //------------------------------------------------------------------------------
-//  Model Loading (1)
+//  Geometry Shader (4)
 //------------------------------------------------------------------------------
 #include "sokol_app.h"
 #include "sokol_gfx.h"
 #include "hmm/HandmadeMath.h"
-#include "1-backpack-diffuse.glsl.h"
+#include "4-visualizing-normals.glsl.h"
 #define LOPGL_APP_IMPL
 #include "../lopgl_app.h"
 #include "fast_obj/lopgl_fast_obj.h"
@@ -12,8 +12,10 @@
 static const char* filename = "backpack.obj";
 
 typedef struct mesh_t {
-    sg_pipeline pip;
-    sg_bindings bind;
+    sg_pipeline pip_diffuse;
+    sg_pipeline pip_normals;
+    sg_bindings bind_diffuse;
+    sg_bindings bind_normals;
     unsigned int face_count;
 } mesh_t;
 
@@ -22,7 +24,7 @@ static struct {
     mesh_t mesh; 
     sg_pass_action pass_action;
     uint8_t file_buffer[16 * 1024 * 1024];
-    float vertex_buffer[70000 * 3 * 8];
+    float vertex_buffer[70000 * 3 * 5];
 } state;
 
 static void fail_callback() {
@@ -38,29 +40,37 @@ static void load_obj_callback(lopgl_obj_response_t* response) {
     for (unsigned int i = 0; i < mesh->face_count * 3; ++i) {
         fastObjIndex vertex = mesh->indices[i];
 
-        unsigned int pos = i * 8;
+        unsigned int pos = i * 5;
         unsigned int v_pos = vertex.p * 3;
-        unsigned int n_pos = vertex.n * 3;
         unsigned int t_pos = vertex.t * 2;
 
         memcpy(state.vertex_buffer + pos, mesh->positions + v_pos, 3 * sizeof(float));
-        memcpy(state.vertex_buffer + pos + 3, mesh->normals + n_pos, 3 * sizeof(float));
-        memcpy(state.vertex_buffer + pos + 6, mesh->texcoords + t_pos, 2 * sizeof(float));
+        memcpy(state.vertex_buffer + pos + 3, mesh->texcoords + t_pos, 2 * sizeof(float));
     }
 
-    sg_buffer cube_buffer = sg_make_buffer(&(sg_buffer_desc){
-        .size = mesh->face_count * 3 * 8 * sizeof(float),
-        .content = state.vertex_buffer,
-        .label = "backpack-vertices"
+    sg_image vertex_image_id = sg_make_image(&(sg_image_desc){
+        .width = 1024,
+        .height = mesh->face_count*3*5/1024 + 1,
+        .pixel_format = SG_PIXELFORMAT_R32F,
+        /* set filter to nearest, webgl2 does not support filtering for float textures */
+        .mag_filter = SG_FILTER_NEAREST,
+        .min_filter = SG_FILTER_NEAREST,
+        .content.subimage[0][0] = {
+            .ptr = state.vertex_buffer,
+            .size = sizeof(state.vertex_buffer)
+        },
+        .label = "color-texture"
     });
-    
-    state.mesh.bind.vertex_buffers[0] = cube_buffer;
-    sg_image img_id = sg_alloc_image();
-    state.mesh.bind.fs_images[SLOT_diffuse_texture] = img_id;
+
+    state.mesh.bind_diffuse.vs_images[SLOT_vertex_texture] = vertex_image_id;
+    state.mesh.bind_normals.vs_images[SLOT_vertex_texture] = vertex_image_id;
+
+    sg_image diffuse_img_id = sg_alloc_image();
+    state.mesh.bind_diffuse.fs_images[SLOT_diffuse_texture] = diffuse_img_id;
 
     lopgl_load_image(&(lopgl_image_request_t){
         .path = mesh->materials[0].map_Kd.name,
-        .img_id = img_id,
+        .img_id = diffuse_img_id,
         .buffer_ptr = state.file_buffer,
         .buffer_size = sizeof(state.file_buffer),
         .fail_callback = fail_callback
@@ -70,28 +80,47 @@ static void load_obj_callback(lopgl_obj_response_t* response) {
 static void init(void) {
     lopgl_setup();
 
-    /* create shader from code-generated sg_shader_desc */
-    sg_shader phong_shd = sg_make_shader(phong_shader_desc());
+    if (sapp_gles2()) {
+        /* this demo needs GLES3/WebGL because we are using texelFetch in the shader */
+        return;
+    }
 
-    /* create a pipeline object for object */
-    state.mesh.pip = sg_make_pipeline(&(sg_pipeline_desc){
-        .shader = phong_shd,
+    /* create shader from code-generated sg_shader_desc */
+    sg_shader simple_shd = sg_make_shader(simple_shader_desc());
+
+    /* create a pipeline object for the diffuse shading */
+    state.mesh.pip_diffuse = sg_make_pipeline(&(sg_pipeline_desc){
+        .shader = simple_shd,
         /* if the vertex layout doesn't have gaps, don't need to provide strides and offsets */
         .layout = {
             .attrs = {
-                [ATTR_vs_a_pos].format = SG_VERTEXFORMAT_FLOAT3,
-                [ATTR_vs_a_tex_coords] = {
-                    .format = SG_VERTEXFORMAT_FLOAT2,
-                    .offset = 24
-                }
+                [ATTR_vs_simple_a_dummy].format = SG_VERTEXFORMAT_FLOAT,
             },
-            .buffers[0].stride = 32
         },
         .depth_stencil = {
             .depth_compare_func = SG_COMPAREFUNC_LESS_EQUAL,
             .depth_write_enabled = true,
         },
-        .label = "object-pipeline"
+        .label = "diffuse-pipeline"
+    });
+
+    sg_shader normals_shd = sg_make_shader(normals_shader_desc());
+
+    /* create a pipeline object for the normals */
+    state.mesh.pip_normals = sg_make_pipeline(&(sg_pipeline_desc){
+        .shader = normals_shd,
+        .primitive_type = SG_PRIMITIVETYPE_LINES,
+        /* if the vertex layout doesn't have gaps, don't need to provide strides and offsets */
+        .layout = {
+            .attrs = {
+                [ATTR_vs_normals_a_dummy].format = SG_VERTEXFORMAT_FLOAT,
+            },
+        },
+        .depth_stencil = {
+            .depth_compare_func = SG_COMPAREFUNC_LESS_EQUAL,
+            .depth_write_enabled = true,
+        },
+        .label = "normals-pipeline"
     });
     
     /* a pass action to clear framebuffer */
@@ -109,6 +138,12 @@ static void init(void) {
 }
 
 void frame(void) {
+    /* can't do anything useful on GLES2/WebGL */
+    if (sapp_gles2()) {
+        lopgl_render_gles2_fallback();
+        return;
+    }
+
     lopgl_update();
 
     sg_begin_default_pass(&state.pass_action, sapp_width(), sapp_height());
@@ -120,15 +155,22 @@ void frame(void) {
         vs_params_t vs_params = {
             .model = HMM_Mat4d(1.f),
             .view = view,
-            .projection = projection
+            .projection = projection,
         };
 
-        sg_apply_pipeline(state.mesh.pip);
-        sg_apply_bindings(&state.mesh.bind);
+        sg_apply_pipeline(state.mesh.pip_diffuse);
+        sg_apply_bindings(&state.mesh.bind_diffuse);
 
         sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &vs_params, sizeof(vs_params));
 
         sg_draw(0, state.mesh.face_count * 3, 1);
+
+        sg_apply_pipeline(state.mesh.pip_normals);
+        sg_apply_bindings(&state.mesh.bind_normals);
+
+        sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &vs_params, sizeof(vs_params));
+
+        sg_draw(0, state.mesh.face_count * 2, 1);
     }
 
     lopgl_render_help();
@@ -153,7 +195,6 @@ sapp_desc sokol_main(int argc, char* argv[]) {
         .event_cb = event,
         .width = 800,
         .height = 600,
-        .gl_force_gles2 = true,
-        .window_title = "Backpack Diffuse (LearnOpenGL)",
+        .window_title = "Visualizing Normals (LearnOpenGL)",
     };
 }
