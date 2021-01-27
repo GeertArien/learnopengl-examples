@@ -1,0 +1,6 @@
+---
+options:
+  src_dir: ../data
+
+files: 
+  - wood.png

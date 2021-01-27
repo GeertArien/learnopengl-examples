@@ -89,7 +89,7 @@ static void init(void) {
 }
 
 void frame(void) {
-     /* can't do anything useful on GLES2/WebGL */
+    /* can't do anything useful on GLES2/WebGL */
     if (sapp_gles2()) {
         lopgl_render_gles2_fallback();
         return;
