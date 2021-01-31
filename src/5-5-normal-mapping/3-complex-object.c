@@ -27,8 +27,8 @@ typedef struct mesh_t {
 static struct {
     mesh_t mesh;
     sg_pass_action pass_action;
-    hmm_vec3 light_pos;
-    uint8_t file_buffer[32 * 1024 * 1024];
+    bool normal_mapping;
+    uint8_t file_buffer[16 * 1024 * 1024];
     float vertex_buffer[70000 * 3 * 11]
 } state;
 
@@ -45,7 +45,6 @@ hmm_vec3 computeTangent(vertex_t* v0, vertex_t* v1, vertex_t* v2) {
     hmm_vec2 delta_uv1 = HMM_SubtractVec2(v2->tex_coords, v0->tex_coords);
 
     float f = 1.f / (delta_uv0.X * delta_uv1.Y - delta_uv1.X * delta_uv0.Y);
-
     float x = f * (delta_uv1.Y * edge0.X - delta_uv0.Y * edge1.X);
     float y = f * (delta_uv1.Y * edge0.Y - delta_uv0.Y * edge1.Y);
     float z = f * (delta_uv1.Y * edge0.Z - delta_uv0.Y * edge1.Z);
@@ -76,10 +75,7 @@ static void load_obj_callback(lopgl_obj_response_t* response) {
         vertex_t v0 = getVertex(index, mesh);
         vertex_t v1 = getVertex(index + 1, mesh);
         vertex_t v2 = getVertex(index + 2, mesh);
-
         v0.tangent = v1.tangent = v2.tangent = computeTangent(&v0, &v1, &v2);
-
-        size_t si = sizeof(vertex_t);
 
         unsigned int pos = i * 3 * 11;
         memcpy(state.vertex_buffer + pos, &v0, sizeof(vertex_t));
@@ -130,7 +126,8 @@ static void load_obj_callback(lopgl_obj_response_t* response) {
 static void init(void) {
     lopgl_setup();
 
-    state.light_pos = HMM_Vec3(.5f, 1.f, .3f);
+    // enable normal mapping
+    state.normal_mapping = true;
 
     /* create shader from code-generated sg_shader_desc */
     sg_shader shd = sg_make_shader(blinn_phong_shader_desc());
@@ -168,6 +165,17 @@ static void init(void) {
     });
 }
 
+static void render_ui() {
+    sdtx_canvas(sapp_width()*0.5f, sapp_height()*0.5f);
+    sdtx_origin(sapp_width()*0.5f/8.f - 20.f, 0.25f);       // each character occupies a grid fo 8x8
+    sdtx_home();
+
+    sdtx_color4b(0xff, 0x00, 0x00, 0xaf);
+    sdtx_printf("Normal Mapping\t[%c]\n\n", state.normal_mapping ? '*': ' ');
+    sdtx_puts("Toggle:\t\t'SPACE'");
+    sdtx_draw();
+}
+
 void frame(void) {
     lopgl_update();
 
@@ -184,16 +192,64 @@ void frame(void) {
             .view = view,
             .projection = projection,
             .model = HMM_Mat4d(1.f),
-            .view_pos = lopgl_camera_position(),
-            .light_pos = state.light_pos
+            .view_pos = lopgl_camera_position()
         };
-
         sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &vs_params, sizeof(vs_params));
+
+        vs_dir_light_t vs_dir_light = {
+            .direction = HMM_Vec3(-0.2f, -1.0f, -0.3f)
+        };
+        sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_dir_light, &vs_dir_light, sizeof(vs_dir_light));
+
+        vs_point_lights_t vs_point_lights = {
+            .position[0]    = HMM_Vec4( 0.7f,  0.2f,  2.0f, 1.0f),
+            .position[1]    = HMM_Vec4( 2.3f, -3.3f, -4.0f, 1.0f),
+            .position[2]    = HMM_Vec4(-4.0f,  2.0f, -12.0f, 1.0f),
+            .position[3]    = HMM_Vec4( 0.0f,  0.0f, -3.0f, 1.0f)
+        };
+        sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_point_lights, &vs_point_lights, sizeof(vs_point_lights_t));
+
+        fs_params_t fs_params = {
+            .material_shininess = 64.0f,
+            .normal_mapping = state.normal_mapping ? 1.f : 0.f
+        };
+        sg_apply_uniforms(SG_SHADERSTAGE_FS, SLOT_fs_params, &fs_params, sizeof(fs_params));
+
+        fs_dir_light_t fs_dir_light = {
+            .ambient = HMM_Vec3(0.05f, 0.05f, 0.05f),
+            .diffuse = HMM_Vec3(0.4f, 0.4f, 0.4f),
+            .specular = HMM_Vec3(0.5f, 0.5f, 0.5f)
+        };
+        sg_apply_uniforms(SG_SHADERSTAGE_FS, SLOT_fs_dir_light, &fs_dir_light, sizeof(fs_dir_light));
+
+        fs_point_lights_t fs_point_lights = {
+            .ambient[0]     = HMM_Vec4(0.05f, 0.05f, 0.05f, 0.0f),
+            .diffuse[0]     = HMM_Vec4(0.8f, 0.8f, 0.8f, 0.0f),
+            .specular[0]    = HMM_Vec4(1.0f, 1.0f, 1.0f, 0.0f),
+            .attenuation[0] = HMM_Vec4(1.0f, 0.09f, 0.032f, 0.0f),
+            .ambient[1]     = HMM_Vec4(0.05f, 0.05f, 0.05f, 0.0f),
+            .diffuse[1]     = HMM_Vec4(0.8f, 0.8f, 0.8f, 0.0f),
+            .specular[1]    = HMM_Vec4(1.0f, 1.0f, 1.0f, 0.0f),
+            .attenuation[1] = HMM_Vec4(1.0f, 0.09f, 0.032f, 0.0f),
+            .ambient[2]     = HMM_Vec4(0.05f, 0.05f, 0.05f, 0.0f),
+            .diffuse[2]     = HMM_Vec4(0.8f, 0.8f, 0.8f, 0.0f),
+            .specular[2]    = HMM_Vec4(1.0f, 1.0f, 1.0f, 0.0f),
+            .attenuation[2] = HMM_Vec4(1.0f, 0.09f, 0.032f, 0.0f),
+            .ambient[3]     = HMM_Vec4(0.05f, 0.05f, 0.05f, 0.0f),
+            .diffuse[3]     = HMM_Vec4(0.8f, 0.8f, 0.8f, 0.0f),
+            .specular[3]    = HMM_Vec4(1.0f, 1.0f, 1.0f, 0.0f),
+            .attenuation[3] = HMM_Vec4(1.0f, 0.09f, 0.032f, 0.0f)
+        };
+        sg_apply_uniforms(SG_SHADERSTAGE_FS, SLOT_fs_point_lights, &fs_point_lights, sizeof(fs_point_lights_t));
 
         sg_draw(0, state.mesh.face_count * 3, 1);
     }
 
     lopgl_render_help();
+
+    if (lopgl_ui_visible()) {
+        render_ui();
+    }
 
     sg_end_pass();
     sg_commit();
@@ -201,6 +257,12 @@ void frame(void) {
 
 void event(const sapp_event* e) {
     lopgl_handle_input(e);
+
+    if (e->type == SAPP_EVENTTYPE_KEY_DOWN) {
+        if (e->key_code == SAPP_KEYCODE_SPACE) {
+            state.normal_mapping = !state.normal_mapping;
+        }
+    }
 }
 
 void cleanup(void) {

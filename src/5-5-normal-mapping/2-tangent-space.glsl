@@ -8,7 +8,6 @@ in vec2 a_tex_coords;
 in vec3 a_tangent;
 
 out INTERFACE {
-    vec3 frag_pos;
     vec2 tex_coords;
     vec3 tangent_light_pos;
     vec3 tangent_view_pos;
@@ -24,7 +23,6 @@ uniform vs_params {
 };
 
 void main() {
-    inter.frag_pos = vec3(model * vec4(a_pos, 1.0));   
     inter.tex_coords = a_tex_coords;
     
     mat3 normal_matrix = transpose(inverse(mat3(model)));
@@ -38,7 +36,7 @@ void main() {
     mat3 TBN = transpose(mat3(T, B, N));    
     inter.tangent_light_pos = TBN * light_pos;
     inter.tangent_view_pos  = TBN * view_pos;
-    inter.tangent_frag_pos  = TBN * inter.frag_pos;
+    inter.tangent_frag_pos  = TBN * vec3(model * vec4(a_pos, 1.0));
         
     gl_Position = projection * view * model * vec4(a_pos, 1.0);
 }
@@ -46,7 +44,6 @@ void main() {
 
 @fs fs
 in INTERFACE {
-    vec3 frag_pos;
     vec2 tex_coords;
     vec3 tangent_light_pos;
     vec3 tangent_view_pos;

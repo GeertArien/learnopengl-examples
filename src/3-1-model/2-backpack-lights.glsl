@@ -61,18 +61,6 @@ uniform fs_point_lights {
     vec4 attenuation[NR_POINT_LIGHTS];
 } point_lights;
 
-uniform fs_spot_light {
-    vec3 position;
-    vec3 direction;
-    float cut_off;
-    float outer_cut_off;
-    vec3 attenuation;
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-} spot_light;
-
-// directional light type
 struct dir_light_t {
     vec3 direction;
     vec3 ambient;
