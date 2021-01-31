@@ -1,0 +1,12 @@
+---
+options:
+  src_dir: ../data
+
+files: 
+  - brickwall.jpg
+  - brickwall_normal.jpg
+  - backpack.mtl
+  - backpack.obj
+  - backpack_diffuse.jpg
+  - backpack_specular.jpg
+  - backpack_normal.png

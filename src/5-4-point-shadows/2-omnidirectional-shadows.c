@@ -1,27 +1,28 @@
 //------------------------------------------------------------------------------
-//  Shadow Mapping (3)
+//  Point Shadows (2)
 //------------------------------------------------------------------------------
 #include "sokol_app.h"
 #include "sokol_gfx.h"
 #include "hmm/HandmadeMath.h"
-#include "3-improved-shadows.glsl.h"
+#include "2-omnidirectional-shadows.glsl.h"
 #define LOPGL_APP_IMPL
 #include "../lopgl_app.h"
+
+static const int SHADOW_WIDTH = 1024;
+static const int SHADOW_HEIGHT = 1024;
 
 /* application state */
 static struct {
     struct {
         sg_pass_action pass_action;
-        sg_pass pass;
+        sg_pass pass[6];
         sg_pipeline pip;
-        sg_bindings bind_cube;
-        sg_bindings bind_plane;
+        sg_bindings bind;
     } depth;
     struct {
         sg_pass_action pass_action;
         sg_pipeline pip;
-        sg_bindings bind_cube;
-        sg_bindings bind_plane;
+        sg_bindings bind;
     } shadows;
     hmm_vec3 light_pos;
     hmm_mat4 light_space_matrix;
@@ -37,25 +38,20 @@ static void fail_callback() {
 static void init(void) {
     lopgl_setup();
 
-    // compute light space matrix
-    state.light_pos = HMM_Vec3(-2.f, 4.f, -1.f);
-    float near_plane = 1.f;
-    float far_plane = 7.5f;
-    hmm_mat4 light_projection = HMM_Orthographic(-10.f, 10.f, -10.f, 10.f, near_plane, far_plane);
-    hmm_mat4 light_view = HMM_LookAt(state.light_pos, HMM_Vec3(0.f, 0.f, 0.f), HMM_Vec3(0.f, 1.f, 0.f));
-    state.light_space_matrix = HMM_MultiplyMat4(light_projection, light_view);
+    state.light_pos = HMM_Vec3(0.f, 0.f, 0.f);
 
-     /* a render pass with one color- and one depth-attachment image */
+    /* create depth cubemap */
     sg_image_desc img_desc = {
+        .type = SG_IMAGETYPE_CUBE,
         .render_target = true,
-        .width = 1024,
-        .height = 1024,
+        .width = SHADOW_WIDTH,
+        .height = SHADOW_HEIGHT,
         .pixel_format = SG_PIXELFORMAT_RGBA8,
         .min_filter = SG_FILTER_NEAREST,
         .mag_filter = SG_FILTER_NEAREST,
-        .wrap_u = SG_WRAP_CLAMP_TO_BORDER,
-        .wrap_v = SG_WRAP_CLAMP_TO_BORDER,
-        .border_color = SG_BORDERCOLOR_OPAQUE_WHITE,
+        .wrap_u = SG_WRAP_CLAMP_TO_EDGE,
+        .wrap_v = SG_WRAP_CLAMP_TO_EDGE,
+        .wrap_w = SG_WRAP_CLAMP_TO_EDGE,
         .sample_count = 1,
         .label = "shadow-map-color-image"
     };
@@ -63,16 +59,19 @@ static void init(void) {
     img_desc.pixel_format = SG_PIXELFORMAT_DEPTH;
     img_desc.label = "shadow-map-depth-image";
     sg_image depth_img = sg_make_image(&img_desc);
-    state.depth.pass = sg_make_pass(&(sg_pass_desc){
-        .color_attachments[0].image = color_img,
-        .depth_stencil_attachment.image = depth_img,
-        .label = "shadow-map-pass"
-    });
+
+    /* one pass for each cubemap face */
+    for (size_t i = 0; i < 6; ++i) {
+        state.depth.pass[i] = sg_make_pass(&(sg_pass_desc){
+            .color_attachments[0] = { .image = color_img, .face = i },
+            .depth_stencil_attachment = {  .image = depth_img, .face = i },
+            .label = "shadow-map-pass"
+        });
+    }
 
     // sokol and webgl 1 do not support using the depth map as texture map
     // so instead we write the depth value to the color map
-    state.shadows.bind_cube.fs_images[SLOT_shadow_map] = color_img;
-    state.shadows.bind_plane.fs_images[SLOT_shadow_map] = color_img;
+    state.shadows.bind.fs_images[SLOT_depth_map] = color_img;
 
     float cube_vertices[] = {
         // back face
@@ -125,28 +124,8 @@ static void init(void) {
         .label = "cube-vertices"
     });
     
-    state.depth.bind_cube.vertex_buffers[0] = cube_buffer;
-    state.shadows.bind_cube.vertex_buffers[0] = cube_buffer;
-
-    float plane_vertices[] = {
-        // positions         // normals      // texcoords
-         25.f, -.5f,  25.f,  0.f, 1.f, 0.f,  25.f,  0.f,
-        -25.f, -.5f,  25.f,  0.f, 1.f, 0.f,   0.f,  0.f,
-        -25.f, -.5f, -25.f,  0.f, 1.f, 0.f,   0.f, 25.f,
-
-         25.f, -.5f,  25.f,  0.f, 1.f, 0.f,  25.f,  0.f,
-        -25.f, -.5f, -25.f,  0.f, 1.f, 0.f,   0.f, 25.f,
-         25.f, -.5f, -25.f,  0.f, 1.f, 0.f,  25.f, 25.f
-    };
-
-    sg_buffer plane_buffer = sg_make_buffer(&(sg_buffer_desc){
-        .size = sizeof(plane_vertices),
-        .content = plane_vertices,
-        .label = "plane-vertices"
-    });
-    
-    state.depth.bind_plane.vertex_buffers[0] = plane_buffer;
-    state.shadows.bind_plane.vertex_buffers[0] = plane_buffer;
+    state.depth.bind.vertex_buffers[0] = cube_buffer;
+    state.shadows.bind.vertex_buffers[0] = cube_buffer;
 
     sg_shader shd_depth = sg_make_shader(depth_shader_desc());
 
@@ -162,6 +141,11 @@ static void init(void) {
         .depth_stencil = {
             .depth_compare_func = SG_COMPAREFUNC_LESS_EQUAL,
             .depth_write_enabled = true,
+        },
+        /* cull front faces for depth map */
+        .rasterizer = {
+            .cull_mode = SG_CULLMODE_FRONT,
+            .face_winding = SG_FACEWINDING_CCW
         },
         .blend = {
             .color_format = SG_PIXELFORMAT_RGBA8,
@@ -185,6 +169,10 @@ static void init(void) {
             .depth_compare_func = SG_COMPAREFUNC_LESS_EQUAL,
             .depth_write_enabled = true,
         },
+        .rasterizer = {
+            .cull_mode = SG_CULLMODE_BACK,
+            .face_winding = SG_FACEWINDING_CCW
+        },
         .label = "shadows-pipeline"
     });
 
@@ -197,8 +185,7 @@ static void init(void) {
     };
 
     sg_image img_id_diffuse = sg_alloc_image();
-    state.shadows.bind_cube.fs_images[SLOT_diffuse_texture] = img_id_diffuse;
-    state.shadows.bind_plane.fs_images[SLOT_diffuse_texture] = img_id_diffuse;
+    state.shadows.bind.fs_images[SLOT_diffuse_texture] = img_id_diffuse;
 
     lopgl_load_image(&(lopgl_image_request_t){
             .path = "wood.png",
@@ -209,25 +196,40 @@ static void init(void) {
     });
 }
 
-void draw_cubes() {
+void draw_room_cube() {
     vs_params_t vs_params = {
-        .light_space_matrix = state.light_space_matrix,
-        .model = HMM_Mat4d(1.f)
+        /* invert the outer cube so just the inner faces are shown with back culling */
+        .model = HMM_Scale(HMM_Vec3(-5.f, -5.f, -5.f))
     };
+    sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &vs_params, sizeof(vs_params));
+    sg_draw(0, 36, 1);
+}
 
-    hmm_mat4 translate = HMM_Translate(HMM_Vec3(0.f, 1.5f, 0.f));
+void draw_cubes() {
+    vs_params_t vs_params;
+    hmm_mat4 translate = HMM_Translate(HMM_Vec3(4.f, -3.5f, 0.f));
     hmm_mat4 scale = HMM_Scale(HMM_Vec3(.5f, .5f, .5f));
     vs_params.model = HMM_MultiplyMat4(translate, scale);
     sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &vs_params, sizeof(vs_params));
     sg_draw(0, 36, 1);
-    translate = HMM_Translate(HMM_Vec3(2.f, 0.f, 1.f));
+    translate = HMM_Translate(HMM_Vec3(2.f, 3.f, 1.f));
+    scale = HMM_Scale(HMM_Vec3(.75f, .75f, .75f));
+    vs_params.model = HMM_MultiplyMat4(translate, scale);
+    sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &vs_params, sizeof(vs_params));
+    sg_draw(0, 36, 1);
+    translate = HMM_Translate(HMM_Vec3(-3.f, -1.f, 0.f));
     scale = HMM_Scale(HMM_Vec3(.5f, .5f, .5f));
     vs_params.model = HMM_MultiplyMat4(translate, scale);
     sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &vs_params, sizeof(vs_params));
     sg_draw(0, 36, 1);
-    translate = HMM_Translate(HMM_Vec3(-1.f, 0.f, 2.f));
+    translate = HMM_Translate(HMM_Vec3(-1.5f, 1.f, 1.5f));
+    scale = HMM_Scale(HMM_Vec3(.5f, .5f, .5f));
+    vs_params.model = HMM_MultiplyMat4(translate, scale);
+    sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &vs_params, sizeof(vs_params));
+    sg_draw(0, 36, 1);
+    translate = HMM_Translate(HMM_Vec3(-1.5f, 2.f, -3.f));
     hmm_mat4 rotate = HMM_Rotate(60.f, HMM_NormalizeVec3(HMM_Vec3(1.f, 0.f, 1.f)));
-    scale = HMM_Scale(HMM_Vec3(.25f, .25f, .25f));
+    scale = HMM_Scale(HMM_Vec3(.75f, .75f, .75f));
     vs_params.model = HMM_MultiplyMat4(HMM_MultiplyMat4(translate, rotate), scale);
     sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &vs_params, sizeof(vs_params));
     sg_draw(0, 36, 1);
@@ -236,40 +238,68 @@ void draw_cubes() {
 void frame(void) {
     lopgl_update();
 
-    /* 1. render depth of scene to texture (from light's perspective) */
-    sg_begin_pass(state.depth.pass, &state.depth.pass_action);
-    sg_apply_pipeline(state.depth.pip);
+    /* move light position over time */
+    state.light_pos.Z = HMM_SinF((float)stm_sec(stm_now()) * .5f) * 3.f;
 
-    /* plane */
-    sg_apply_bindings(&state.depth.bind_plane);
+    /* create light space transform matrices */
+    hmm_mat4 light_space_transforms[6];
+    float near_plane = 1.0f;
+    float far_plane  = 25.0f;
+    hmm_mat4 shadow_proj = HMM_Perspective(90.0f, (float)SHADOW_WIDTH / (float)SHADOW_HEIGHT, near_plane, far_plane);
+    hmm_vec3 center = HMM_AddVec3(state.light_pos, HMM_Vec3(1.f, 0.f, 0.f));
+    hmm_mat4 lookat = HMM_LookAt(state.light_pos, center, HMM_Vec3(0.f, -1.f, 0.f));
+    light_space_transforms[SG_CUBEFACE_POS_X] = HMM_MultiplyMat4(shadow_proj, lookat);
+    center = HMM_AddVec3(state.light_pos, HMM_Vec3(-1.f, 0.f, 0.f));
+    lookat = HMM_LookAt(state.light_pos, center, HMM_Vec3(0.f, -1.f, 0.f));
+    light_space_transforms[SG_CUBEFACE_NEG_X] = HMM_MultiplyMat4(shadow_proj, lookat);
+    center = HMM_AddVec3(state.light_pos, HMM_Vec3(0.f, 1.f, 0.f));
+    lookat = HMM_LookAt(state.light_pos, center, HMM_Vec3(0.f, 0.f, 1.f));
+    light_space_transforms[SG_CUBEFACE_POS_Y] = HMM_MultiplyMat4(shadow_proj, lookat);
+    center = HMM_AddVec3(state.light_pos, HMM_Vec3(0.f, -1.f, 0.f));
+    lookat = HMM_LookAt(state.light_pos, center, HMM_Vec3(0.f, 0.f, -1.f));
+    light_space_transforms[SG_CUBEFACE_NEG_Y] = HMM_MultiplyMat4(shadow_proj, lookat);
+    center = HMM_AddVec3(state.light_pos, HMM_Vec3(0.f, 0.f, 1.f));
+    lookat = HMM_LookAt(state.light_pos, center, HMM_Vec3(0.f, -1.f,  0.f));
+    light_space_transforms[SG_CUBEFACE_POS_Z] = HMM_MultiplyMat4(shadow_proj, lookat);
+    center = HMM_AddVec3(state.light_pos, HMM_Vec3(0.f, 0.f, -1.f));
+    lookat = HMM_LookAt(state.light_pos, center, HMM_Vec3(0.f, -1.f,  0.f));
+    light_space_transforms[SG_CUBEFACE_NEG_Z] = HMM_MultiplyMat4(shadow_proj, lookat);
 
-    vs_params_t vs_params = {
-        .light_space_matrix = state.light_space_matrix,
-        .model = HMM_Mat4d(1.f)
-    };
+    /* render depth of scene to cubemap (from light's perspective) */
+    for (size_t i = 0; i < 6; ++i) {
+        sg_begin_pass(state.depth.pass[i], &state.depth.pass_action);
+        sg_apply_pipeline(state.depth.pip);
+        sg_apply_bindings(&state.depth.bind);
 
-    sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &vs_params, sizeof(vs_params));
-    sg_draw(0, 6, 1);
+        vs_params_depth_t vs_params_depth = {
+            .light_space_matrix = light_space_transforms[i]
+        };
 
-    /* cubes */
-    sg_apply_bindings(&state.depth.bind_cube);
-    draw_cubes();
-    sg_end_pass();
+        sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params_depth, &vs_params_depth, sizeof(vs_params_depth));
 
-    /* 2. render scene as normal using the generated depth/shadow map */
+        fs_params_depth_t fs_params_depth = {
+            .light_pos = state.light_pos,
+            .far_plane = far_plane
+        };
+
+        sg_apply_uniforms(SG_SHADERSTAGE_FS, SLOT_fs_params_depth, &fs_params_depth, sizeof(fs_params_depth));
+
+        draw_cubes();
+        sg_end_pass();
+    }
+
+    /* render scene as normal using the generated depth/shadow map */
     sg_begin_default_pass(&state.shadows.pass_action, sapp_width(), sapp_height());
     sg_apply_pipeline(state.shadows.pip);
-
-    /* plane */
-    sg_apply_bindings(&state.shadows.bind_plane);
-    sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &vs_params, sizeof(vs_params));
+    sg_apply_bindings(&state.shadows.bind);
 
     hmm_mat4 view = lopgl_view_matrix();
     hmm_mat4 projection = HMM_Perspective(lopgl_fov(), (float)sapp_width() / (float)sapp_height(), 0.1f, 100.0f);
 
     vs_params_shadows_t vs_params_shadows = {
         .projection = projection,
-        .view = view
+        .view = view,
+        .normal_multiplier = 1.f
     };
 
     sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params_shadows, &vs_params_shadows, sizeof(vs_params_shadows));
@@ -277,16 +307,18 @@ void frame(void) {
     fs_params_shadows_t fs_params_shadows = {
         .light_pos = state.light_pos,
         .view_pos = lopgl_camera_position(),
-        .shadow_map_size = HMM_Vec2(1024.f, 1024.f)
+        .far_plane = far_plane
     };
 
     sg_apply_uniforms(SG_SHADERSTAGE_FS, SLOT_fs_params_shadows, &fs_params_shadows, sizeof(fs_params_shadows));
 
-    sg_draw(0, 6, 1);
-
-    /* cubes */
-    sg_apply_bindings(&state.shadows.bind_cube);
     draw_cubes();
+
+    /* invert the normals for the outer cube */
+    vs_params_shadows.normal_multiplier = -1.f;
+    sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params_shadows, &vs_params_shadows, sizeof(vs_params_shadows));
+
+    draw_room_cube();
 
     lopgl_render_help();
 
@@ -311,6 +343,6 @@ sapp_desc sokol_main(int argc, char* argv[]) {
         .width = 800,
         .height = 600,
         .gl_force_gles2 = true,
-        .window_title = "Improved Shadows (LearnOpenGL)",
+        .window_title = "Omnidirectional Shadows (LearnOpenGL)",
     };
 }

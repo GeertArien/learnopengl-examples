@@ -42,8 +42,8 @@ static void init(void) {
         .width = 1024,
         .height = 1024,
         .pixel_format = SG_PIXELFORMAT_RGBA8,
-        .min_filter = SG_FILTER_LINEAR,
-        .mag_filter = SG_FILTER_LINEAR,
+        .min_filter = SG_FILTER_NEAREST,
+        .mag_filter = SG_FILTER_NEAREST,
         .sample_count = 1,
         .label = "shadow-map-color-image"
     };

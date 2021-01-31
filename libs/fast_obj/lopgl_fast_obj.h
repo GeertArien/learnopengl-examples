@@ -1122,7 +1122,7 @@ int fast_obj_mtllib_read(fastObjMesh* mesh, const char* buffer, unsigned int buf
                     if (is_whitespace(*p))
                         p = read_map(p, &mtl->map_d);
                 }
-                else if (p[0] == 'b' &&
+                else if (p[0] == 'B' &&
                          p[1] == 'u' &&
                          p[2] == 'm' &&
                          p[3] == 'p' &&
