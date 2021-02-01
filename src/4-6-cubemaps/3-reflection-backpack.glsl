@@ -17,7 +17,7 @@ uniform vs_params {
 void main() {
     // inverse tranpose is left out because:
     // (a) glsl es 1.0 (webgl 1.0) doesn't have inverse and transpose functions
-    // (b) were not performing non-uniform scale
+    // (b) we're not performing non-uniform scale
     normal = mat3(model) * a_normal;
     position = vec3(model * vec4(a_pos, 1.0));
     gl_Position = projection * view * model * vec4(a_pos, 1.0);

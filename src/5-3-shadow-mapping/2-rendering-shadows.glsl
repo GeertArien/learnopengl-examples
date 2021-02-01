@@ -62,7 +62,10 @@ uniform vs_params_shadows {
 
 void main() {
     inter.frag_pos = vec3(model * vec4(a_pos, 1.0));
-    inter.normal = transpose(inverse(mat3(model))) * a_normal;
+    // inverse tranpose is left out because:
+    // (a) glsl es 1.0 (webgl 1.0) doesn't have inverse and transpose functions
+    // (b) we're not performing non-uniform scale
+    inter.normal = mat3(model) * a_normal;
     inter.tex_coords = a_tex_coords;
     inter.frag_pos_light_space = light_space_matrix * vec4(inter.frag_pos, 1.0);
     gl_Position = projection * view * model * vec4(a_pos, 1.0);

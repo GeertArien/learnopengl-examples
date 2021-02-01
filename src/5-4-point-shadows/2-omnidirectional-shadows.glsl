@@ -80,8 +80,12 @@ uniform vs_params_shadows {
 
 void main() {
     inter.frag_pos = vec3(model * vec4(a_pos, 1.0));
+    // inverse tranpose is left out because:
+    // (a) glsl es 1.0 (webgl 1.0) doesn't have inverse and transpose functions
+    // (b) we're not performing non-uniform scale
+    inter.normal = mat3(model) * a_normal;
     // a slight hack to make sure the outer large cube displays lighting from the 'inside' instead of the default 'outside'.
-    inter.normal = transpose(inverse(mat3(model))) * (normal_multiplier * a_normal);
+    inter.normal = normal_multiplier * inter.normal;
     inter.tex_coords = a_tex_coords;
     gl_Position = projection * view * model * vec4(a_pos, 1.0);
 }

@@ -8,6 +8,7 @@
 
 @ctype vec2 hmm_vec2
 @ctype vec3 hmm_vec3
+@ctype vec4 hmm_vec4
 @ctype mat4 hmm_mat4
 
 @block vs_params
@@ -80,8 +81,12 @@ uniform vs_params_shadows {
 
 void main() {
     inter.frag_pos = vec3(model * vec4(a_pos, 1.0));
+    // inverse tranpose is left out because:
+    // (a) glsl es 1.0 (webgl 1.0) doesn't have inverse and transpose functions
+    // (b) we're not performing non-uniform scale
+    inter.normal = mat3(model) * a_normal;
     // a slight hack to make sure the outer large cube displays lighting from the 'inside' instead of the default 'outside'.
-    inter.normal = transpose(inverse(mat3(model))) * (normal_multiplier * a_normal);
+    inter.normal = normal_multiplier * inter.normal;
     inter.tex_coords = a_tex_coords;
     gl_Position = projection * view * model * vec4(a_pos, 1.0);
 }
@@ -105,14 +110,12 @@ uniform fs_params_shadows {
     float far_plane;
 };
 
-// array of offset direction for sampling
-vec3 grid_sampling_disk[20] = vec3[] (
-   vec3(1, 1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1, 1,  1), 
-   vec3(1, 1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1, 1, -1),
-   vec3(1, 1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1, 1,  0),
-   vec3(1, 0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1, 0, -1),
-   vec3(0, 1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0, 1, -1)
-);
+// using arrays of vec4 to avoid alignment issues with cross shader compilation
+// using a uniform because we can't initialize an arrays at declaration time with webgl 1.0
+uniform fs_sampling {
+    // array of offset direction for sampling
+    vec4 grid_sampling_disk[20];
+};
 
 float decodeDepth(vec4 rgba) {
     return dot(rgba, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/16581375.0));
@@ -130,7 +133,7 @@ float shadowCalculation(vec3 frag_pos) {
     // make the shadows softer when far away and sharper when close by
     float disk_radius = (1.0 + (view_distance / far_plane)) / 25.0;
     for(int i = 0; i < samples; ++i) {
-        float closest_depth = decodeDepth(texture(depth_map, frag_to_light + grid_sampling_disk[i] * disk_radius));
+        float closest_depth = decodeDepth(texture(depth_map, frag_to_light + grid_sampling_disk[i].xyz * disk_radius));
         // undo mapping [0;1]
         closest_depth *= far_plane;
         if(current_depth - bias > closest_depth)

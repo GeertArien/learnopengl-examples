@@ -312,6 +312,31 @@ void frame(void) {
 
     sg_apply_uniforms(SG_SHADERSTAGE_FS, SLOT_fs_params_shadows, &fs_params_shadows, sizeof(fs_params_shadows));
 
+    fs_sampling_t fs_sampling = {
+        .grid_sampling_disk[0] = HMM_Vec4( 1.f,  1.f,  1.f, 0.f),
+        .grid_sampling_disk[1] = HMM_Vec4( 1.f, -1.f, 1.f, 0.f), 
+        .grid_sampling_disk[2] = HMM_Vec4(-1.f, -1.f,  1.f, 0.f), 
+        .grid_sampling_disk[3] = HMM_Vec4(-1.f, 1.f,  1.f, 0.f),  
+        .grid_sampling_disk[4] = HMM_Vec4(1.f, 1.f, -1.f, 0.f),  
+        .grid_sampling_disk[5] = HMM_Vec4( 1.f, -1.f, -1.f, 0.f),  
+        .grid_sampling_disk[6] = HMM_Vec4(-1.f, -1.f, -1.f, 0.f),  
+        .grid_sampling_disk[7] = HMM_Vec4(-1.f, 1.f, -1.f, 0.f), 
+        .grid_sampling_disk[8] = HMM_Vec4(1.f, 1.f,  0.f, 0.f),  
+        .grid_sampling_disk[9] = HMM_Vec4( 1.f, -1.f,  0.f, 0.f),  
+        .grid_sampling_disk[10] = HMM_Vec4(-1.f, -1.f,  0.f, 0.f),  
+        .grid_sampling_disk[11] = HMM_Vec4(-1.f, 1.f,  0.f, 0.f), 
+        .grid_sampling_disk[12] = HMM_Vec4(1.f, 0.f,  1.f, 0.f),  
+        .grid_sampling_disk[13] = HMM_Vec4(-1.f,  0.f,  1.f, 0.f),  
+        .grid_sampling_disk[14] = HMM_Vec4( 1.f,  0.f, -1.f, 0.f),  
+        .grid_sampling_disk[15] = HMM_Vec4(-1.f, 0.f, -1.f, 0.f), 
+        .grid_sampling_disk[16] = HMM_Vec4(0.f, 1.f,  1.f, 0.f),  
+        .grid_sampling_disk[17] = HMM_Vec4( 0.f, -1.f,  1.f, 0.f),  
+        .grid_sampling_disk[18] = HMM_Vec4( 0.f, -1.f, -1.f, 0.f),  
+        .grid_sampling_disk[19] = HMM_Vec4( 0.f, 1.f, -1.f, 0.f)
+    };
+
+    sg_apply_uniforms(SG_SHADERSTAGE_FS, SLOT_fs_sampling, &fs_sampling, sizeof(fs_sampling));
+
     draw_cubes();
 
     /* invert the normals for the outer cube */

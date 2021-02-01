@@ -34,10 +34,26 @@ uniform vs_point_lights {
     vec4 position[NR_POINT_LIGHTS];
 } point_lights;
 
+
+mat3 transpose(mat3 mat) {
+    vec3 i0 = mat[0];
+    vec3 i1 = mat[1];
+    vec3 i2 = mat[2];
+
+    return mat3(
+        vec3(i0.x, i1.x, i2.x),
+        vec3(i0.y, i1.y, i2.y),
+        vec3(i0.z, i1.z, i2.z)
+    );
+}
+
 void main() {
     inter.tex_coords = a_tex_coords;
     
-    mat3 normal_matrix = transpose(inverse(mat3(model)));
+    // inverse tranpose is left out because:
+    // (a) glsl es 1.0 (webgl 1.0) doesn't have inverse and transpose functions
+    // (b) we're not performing non-uniform scale
+    mat3 normal_matrix = mat3(model);;
     vec3 T = normalize(normal_matrix * a_tangent);
     vec3 N = normalize(normal_matrix * a_normal);
     // re-orthogonalize T with respect to N
@@ -46,7 +62,7 @@ void main() {
     vec3 B = cross(N, T);
     
     mat3 TBN = transpose(mat3(T, B, N));
-    mat3 TBN_normal = transpose(inverse(TBN));
+    // TBN does not perform non-uniform scale, so we don't need inverse transpose for the direction
     inter.tangent_dir_light_direction = TBN * dir_light.direction;
     for(int i = 0; i < NR_POINT_LIGHTS; ++i) {
         inter.tangent_point_light_pos[i] = TBN * point_lights.position[i].xyz;

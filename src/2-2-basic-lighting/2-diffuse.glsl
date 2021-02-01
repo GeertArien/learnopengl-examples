@@ -19,7 +19,7 @@ void main() {
     FragPos = vec3(model * vec4(aPos, 1.0));
     // inverse tranpose is left out because:
     // (a) glsl es 1.0 (webgl 1.0) doesn't have inverse and transpose functions
-    // (b) were not performing non-uniform scale
+    // (b) we're not performing non-uniform scale
     Normal = mat3(model) * aNormal;
 }
 @end

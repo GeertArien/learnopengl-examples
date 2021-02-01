@@ -22,10 +22,25 @@ uniform vs_params {
     vec3 view_pos;
 };
 
+mat3 transpose(mat3 mat) {
+    vec3 i0 = mat[0];
+    vec3 i1 = mat[1];
+    vec3 i2 = mat[2];
+
+    return mat3(
+        vec3(i0.x, i1.x, i2.x),
+        vec3(i0.y, i1.y, i2.y),
+        vec3(i0.z, i1.z, i2.z)
+    );
+}
+
 void main() {
     inter.tex_coords = a_tex_coords;
     
-    mat3 normal_matrix = transpose(inverse(mat3(model)));
+    // inverse tranpose is left out because:
+    // (a) glsl es 1.0 (webgl 1.0) doesn't have inverse and transpose functions
+    // (b) we're not performing non-uniform scale
+    mat3 normal_matrix = mat3(model);
     vec3 T = normalize(normal_matrix * a_tangent);
     vec3 N = normalize(normal_matrix * a_normal);
     // re-orthogonalize T with respect to N
