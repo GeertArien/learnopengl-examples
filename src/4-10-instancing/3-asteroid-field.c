@@ -72,19 +72,15 @@ static void load_obj_callback(lopgl_obj_response_t* response) {
 }
 
 static void init(void) {
-    lopgl_setup_advanced(&(lopgl_orbital_cam_desc_t){
-        .target = HMM_Vec3(0.0f, 0.0f,  0.0f),
-        .up = HMM_Vec3(0.0f, 1.0f,  0.0f),
-        .pitch = 0.f,
-        .heading = 0.f,
-        .distance = 55.f
-    },
-    &(lopgl_fp_cam_desc_t){
-        .position = HMM_Vec3(0.0f, 0.0f,  50.0f),
-        .up = HMM_Vec3(0.0f, 1.0f,  0.0f),
-        .yaw = -90.f,
-        .pitch = 0.f
-    });
+    lopgl_setup();
+
+    lopgl_orbital_cam_desc_t orbital_desc = lopgl_get_orbital_cam_desc();
+    orbital_desc.distance = 55.f;
+    lopgl_set_orbital_cam(&orbital_desc);
+
+    lopgl_fp_cam_desc_t fp_desc = lopgl_get_fp_cam_desc();
+    fp_desc.position.Z = 50.f;
+    lopgl_set_fp_cam(&fp_desc);
 
     /* create shader from code-generated sg_shader_desc */
     sg_shader phong_shd = sg_make_shader(phong_shader_desc());
