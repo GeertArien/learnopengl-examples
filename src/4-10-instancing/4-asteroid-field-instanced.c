@@ -65,6 +65,9 @@ static void load_obj_callback(lopgl_obj_response_t* response) {
     lopgl_load_image(&(lopgl_image_request_t){
         .path = response->mesh->materials[0].map_Kd.name,
         .img_id = img_id,
+        /* Webgl 1.0 does not support repeat for textures that are not a power of two in size */
+        .wrap_u = SG_WRAP_CLAMP_TO_EDGE,
+        .wrap_v = SG_WRAP_CLAMP_TO_EDGE,
         .buffer_ptr = state.file_buffer_img,
         .buffer_size = sizeof(state.file_buffer_img),
         .fail_callback = fail_callback

@@ -54,23 +54,22 @@ uniform sampler2D diffuse_texture;
 const float offset = 1.0 / 300.0;  
 
 void main() {
-    vec2 offsets[9] = vec2[](
-        vec2(-offset,  offset), // top-left
-        vec2( 0.0f,    offset), // top-center
-        vec2( offset,  offset), // top-right
-        vec2(-offset,  0.0f),   // center-left
-        vec2( 0.0f,    0.0f),   // center-center
-        vec2( offset,  0.0f),   // center-right
-        vec2(-offset, -offset), // bottom-left
-        vec2( 0.0f,   -offset), // bottom-center
-        vec2( offset, -offset)  // bottom-right    
-    );
+    /* GLSL ES 1.0 (WebGL 1.0) does not support array constructor */
+    vec2 offsets[9];
+    offsets[0] = vec2(-offset,  offset); // top-left
+    offsets[1] = vec2( 0.0f,    offset); // top-center
+    offsets[2] = vec2( offset,  offset); // top-right
+    offsets[3] = vec2(-offset,  0.0f);   // center-left
+    offsets[4] = vec2( 0.0f,    0.0f);   // center-center
+    offsets[5] = vec2( offset,  0.0f);   // center-right
+    offsets[6] = vec2(-offset, -offset); // bottom-left
+    offsets[7] = vec2( 0.0f,   -offset); // bottom-center
+    offsets[8] = vec2( offset, -offset); // bottom-right    
 
-    float kernel[9] = float[](
-        -1, -1, -1,
-        -1,  9, -1,
-        -1, -1, -1
-    );
+    float kernel[9];
+    kernel[0] = kernel[1] = kernel[2] = kernel[3] = -1.;
+    kernel[4] = 9.;
+    kernel[5] = kernel[6] = kernel[7] = kernel[8] = -1.;
     
     vec3 sample_tex[9];
     for(int i = 0; i < 9; i++) {

@@ -47,6 +47,9 @@ void create_offscreen_pass(int width, int height) {
         .pixel_format = SG_PIXELFORMAT_RGBA8,
         .min_filter = SG_FILTER_LINEAR,
         .mag_filter = SG_FILTER_LINEAR,
+        /* Webgl 1.0 does not support repeat for textures that are not a power of two in size */
+        .wrap_u = SG_WRAP_CLAMP_TO_EDGE,
+        .wrap_v = SG_WRAP_CLAMP_TO_EDGE,
         .label = "color-image"
     };
     sg_image color_img = sg_make_image(&color_img_desc);
@@ -69,11 +72,6 @@ void create_offscreen_pass(int width, int height) {
 
 static void init(void) {
     lopgl_setup();
-    
-    if (sapp_gles2()) {
-        /* this demo needs GLES3/WebGL, the offscreen framebuffer/texture is not a power of 2 */
-        return;
-    }
 
     /* a render pass with one color- and one depth-attachment image */
     create_offscreen_pass(sapp_width(), sapp_height());
@@ -236,12 +234,6 @@ static void init(void) {
 }
 
 void frame(void) {
-    /* can't do anything useful on GLES2/WebGL */
-    if (sapp_gles2()) {
-        lopgl_render_gles2_fallback();
-        return;
-    }
-
     lopgl_update();
 
     hmm_mat4 view = lopgl_view_matrix();
@@ -286,8 +278,6 @@ void frame(void) {
     sg_commit();
 }
 
-
-
 void event(const sapp_event* e) {
     if (e->type == SAPP_EVENTTYPE_RESIZED) {
         create_offscreen_pass(e->framebuffer_width, e->framebuffer_height);
@@ -308,6 +298,7 @@ sapp_desc sokol_main(int argc, char* argv[]) {
         .event_cb = event,
         .width = 800,
         .height = 600,
+        .gl_force_gles2 = true,
         .window_title = "Inversion (LearnOpenGL)",
     };
 }

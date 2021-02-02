@@ -113,6 +113,50 @@ items = [
             [ 'relfection-backpack', '4-6-3-reflection-backpack', '3-reflection-backpack.c', '3-reflection-backpack.glsl'],
             [ 'refraction-cube', '4-6-4-refraction-cube', '4-refraction-cube.c', '4-refraction-cube.glsl'],
             [ 'refraction-backpack', '4-6-5-refraction-backpack', '5-refraction-backpack.c', '5-refraction-backpack.glsl'],
+        ]],
+        [ 'Advanced GLSL', 'https://learnopengl.com/Advanced-OpenGL/Advanced-GLSL', '4-8-advanced-glsl', [
+            [ 'point-size', '4-8-1-point-size', '1-point-size.c', '1-point-size.glsl'],
+            [ 'frag-coord', '4-8-2-frag-coord', '2-frag-coord.c', '2-frag-coord.glsl'],
+            [ 'front-facing', '4-8-3-front-facing', '3-front-facing.c', '3-front-facing.glsl'],
+            [ 'uniform-buffers', '4-8-4-uniform-buffers', '4-uniform-buffers.c', '4-uniform-buffers.glsl'],
+        ]],
+        [ 'Geometry Shader', 'https://learnopengl.com/Advanced-OpenGL/Geometry-Shader', '4-9-geometry-shader', [
+            [ 'lines', '4-9-1-lines', '1-lines.c', '1-lines.glsl'],
+            [ 'houses', '4-9-2-houses', '2-houses.c', '2-houses.glsl'],
+            [ 'exploding-object', '4-9-3-exploding-object', '3-exploding-object.c', '3-exploding-object.glsl'],
+            [ 'visualizing-normals', '4-9-4-visualizing-normals', '4-visualizing-normals.c', '4-visualizing-normals.glsl'],
+        ]],
+        [ 'Instancing', 'https://learnopengl.com/Advanced-OpenGL/Instancing', '4-10-instancing', [
+            [ 'instancing', '4-10-1-instancing', '1-instancing.c', '1-instancing.glsl'],
+            [ 'instanced-arrays', '4-10-2-instanced-arrays', '2-instanced-arrays.c', '2-instanced-arrays.glsl'],
+            [ 'asteroid-field', '4-10-3-asteroid-field', '3-asteroid-field.c', '3-asteroid-field.glsl'],
+            [ 'asteroid-field-instanced', '4-10-4-asteroid-field-instanced', '4-asteroid-field-instanced.c', '4-asteroid-field-instanced.glsl'],
+        ]],
+        [ 'Anti Aliasing', 'https://learnopengl.com/Advanced-OpenGL/Anti-Aliasing', '4-11-anti-aliasing', [
+            [ 'msaa', '4-11-1-msaa', '1-msaa.c', '1-msaa.glsl'],
+            [ 'offscreen-msaa', '4-11-2-offscreen-msaa', '2-offscreen-msaa.c', '2-offscreen-msaa.glsl'],
+            [ 'grayscale-msaa', '4-11-3-grayscale-msaa', '3-grayscale-msaa.c', '3-grayscale-msaa.glsl'],
+        ]],
+        [ 'Advanced Lighting', 'https://learnopengl.com/Advanced-Lighting/Advanced-Lighting', '5-1-advanced-lighting', [
+            [ 'blinn-phong', '5-1-1-blinn-phong', '1-blinn-phong.c', '1-blinn-phong.glsl'],
+        ]],
+        [ 'Gamma Correction', 'https://learnopengl.com/Advanced-Lighting/Gamma-Correction', '5-2-gamma-correction', [
+            [ 'gamma-correction', '5-2-1-gamma-correction', '1-gamma-correction.c', '1-gamma-correction.glsl'],
+        ]],
+        [ 'Shadow Mapping', 'https://learnopengl.com/Advanced-Lighting/Shadows/Shadow-Mapping', '5-3-shadow-mapping', [
+            [ 'mapping-depth', '5-3-1-mapping-depth', '1-mapping-depth.c', '1-mapping-depth.glsl'],
+            [ 'rendering-shadows', '5-3-2-rendering-shadows', '2-rendering-shadows.c', '2-rendering-shadows.glsl'],
+            [ 'improved-shadows', '5-3-3-improved-shadows', '3-improved-shadows.c', '3-improved-shadows.glsl'],
+        ]],
+        [ 'Point Shadows', 'https://learnopengl.com/Advanced-Lighting/Shadows/Point-Shadows', '5-4-point-shadows', [
+            [ 'omnidirectional-depth', '5-4-1-omnidirectional-depth', '1-omnidirectional-depth.c', '1-omnidirectional-depth.glsl'],
+            [ 'omnidirectional-shadows', '5-4-2-omnidirectional-shadows', '2-omnidirectional-shadows.c', '2-omnidirectional-shadows.glsl'],
+            [ 'omnidirectional-PCF', '5-4-3-omnidirectional-PCF', '3-omnidirectional-PCF.c', '3-omnidirectional-PCF.glsl'],
+        ]],
+        [ 'Normal Mapping', 'https://learnopengl.com/Advanced-Lighting/Normal-Mapping', '5-5-normal-mapping', [
+            [ 'normal-mapping', '5-5-1-normal-mapping', '1-normal-mapping.c', '1-normal-mapping.glsl'],
+            [ 'tangent-space', '5-5-2-tangent-space', '2-tangent-space.c', '2-tangent-space.glsl'],
+            [ 'complex-object', '5-5-3-complex-object', '3-complex-object.c', '3-complex-object.glsl'],
         ]]
     ]]
 ]
@@ -120,23 +164,34 @@ items = [
 # assets that must also be copied
 assets = [
     "awesomeface.png",
-    "container.jpg",
-    "container2.png",
-    "container2_specular.png",
     "backpack.mtl",
     "backpack.obj",
     "backpack_diffuse.jpg",
+    "backpack_normal.png",
     "backpack_specular.jpg",
-    "marble.jpg",
-    "metal.png",
+    "brickwall.jpg",
+    "brickwall_normal.jpg",
+    "container.jpg",
+    "container2.png",
+    "container2_specular.png",
     "grass.png",
-    "transparent_window.png",
+    "marble.jpg",
+    "mars.png",
+    "metal.png",
+    "planet.mtl",
+    "planet.obj",
+    "rock.mtl",
+    "rock.obj",
+    "rock.png",
     "skybox_right.jpg",
     "skybox_left.jpg",
     "skybox_top.jpg",
     "skybox_bottom.jpg",
     "skybox_front.jpg",
     "skybox_back.jpg",
+    "transparent_window.png",
+    "uv_grid.png",
+    "wood.png"
 ]
 
 # webpage template arguments
