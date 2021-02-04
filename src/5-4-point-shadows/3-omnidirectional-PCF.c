@@ -63,8 +63,8 @@ static void init(void) {
     /* one pass for each cubemap face */
     for (size_t i = 0; i < 6; ++i) {
         state.depth.pass[i] = sg_make_pass(&(sg_pass_desc){
-            .color_attachments[0] = { .image = color_img, .face = i },
-            .depth_stencil_attachment = {  .image = depth_img, .face = i },
+            .color_attachments[0] = { .image = color_img, .slice = i },
+            .depth_stencil_attachment = {  .image = depth_img, .slice = i },
             .label = "shadow-map-pass"
         });
     }

@@ -29,7 +29,7 @@ static struct {
     sg_pass_action pass_action;
     bool normal_mapping;
     uint8_t file_buffer[16 * 1024 * 1024];
-    float vertex_buffer[70000 * 3 * 11]
+    float vertex_buffer[70000 * 3 * 11];
 } state;
 
 static void fail_callback() {
