@@ -18,7 +18,7 @@ items = [
         ]],
         [ 'Hello Triangle', 'https://learnopengl.com/Getting-started/Hello-Triangle', '1-4-hello-triangle', [
             [ 'triangle', '1-4-1-triangle', '1-triangle.c', '1-triangle.glsl'],
-            [ 'quad', '1-4-2-quad', '2-quad.c', '1-quad.glsl'],
+            [ 'quad', '1-4-2-quad', '2-quad.c', '2-quad.glsl'],
             [ 'quad-wireframe', '1-4-3-quad-wireframe', '3-quad-wireframe.c', '3-quad-wireframe.glsl']
         ]],
         [ 'Shaders', 'https://learnopengl.com/Getting-started/Shaders', '1-5-shaders', [
@@ -85,7 +85,7 @@ items = [
             [ 'depth-always', '4-1-1-depth-always', '1-depth-always.c', '1-depth-always.glsl'],
             [ 'depth-less', '4-1-2-depth-less', '2-depth-less.c', '2-depth-less.glsl'],
             [ 'depth-buffer', '4-1-3-depth-buffer', '3-depth-buffer.c', '3-depth-buffer.glsl'],
-            [ 'linear-depth-buffer', '4-1-4-linear-depth-buffer', '2-linear-depth-buffer.c', '2-linear-depth-buffer.glsl']
+            [ 'linear-depth-buffer', '4-1-4-linear-depth-buffer', '4-linear-depth-buffer.c', '4-linear-depth-buffer.glsl']
         ]],
         [ 'Stencil Testing', 'https://learnopengl.com/Advanced-OpenGL/Stencil-testing', '4-2-stencil-testing', [
             [ 'object-outlining', '4-2-1-object-outlining', '1-object-outlining.c', '1-object-outlining.glsl'],
@@ -150,7 +150,7 @@ items = [
         ]],
         [ 'Point Shadows', 'https://learnopengl.com/Advanced-Lighting/Shadows/Point-Shadows', '5-4-point-shadows', [
             [ 'omnidirectional-depth', '5-4-1-omnidirectional-depth', '1-omnidirectional-depth.c', '1-omnidirectional-depth.glsl'],
-            [ 'omnidirectional-shadows', '5-4-2-omnidirectional-shadows', '2-omnidirectional-shadows.c', '2-omnidirectional-shadows.glsl'],
+            [ 'omnidir-shadows', '5-4-2-omnidirectional-shadows', '2-omnidirectional-shadows.c', '2-omnidirectional-shadows.glsl'],
             [ 'omnidirectional-PCF', '5-4-3-omnidirectional-PCF', '3-omnidirectional-PCF.c', '3-omnidirectional-PCF.glsl'],
         ]],
         [ 'Normal Mapping', 'https://learnopengl.com/Advanced-Lighting/Normal-Mapping', '5-5-normal-mapping', [
