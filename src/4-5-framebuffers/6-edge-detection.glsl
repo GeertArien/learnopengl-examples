@@ -1,11 +1,9 @@
 @ctype vec2 hmm_vec2
-@ctype vec3 hmm_vec3
 @ctype mat4 hmm_mat4
 
 @vs vs_offscreen
 in vec3 a_pos;
 in vec2 a_tex_coords;
-
 out vec2 tex_coords;
 
 uniform vs_params {
@@ -23,7 +21,6 @@ void main() {
 @vs vs_display
 in vec2 a_pos;
 in vec2 a_tex_coords;
-
 out vec2 tex_coords;
 
 void main() {
@@ -34,7 +31,6 @@ void main() {
 
 @fs fs_offscreen
 in vec2 tex_coords;
-
 out vec4 frag_color;
 
 uniform sampler2D diffuse_texture;
@@ -46,25 +42,26 @@ void main() {
 
 @fs fs_display
 in vec2 tex_coords;
-
 out vec4 frag_color;
 
 uniform sampler2D diffuse_texture;
 
-const float offset = 1.0 / 300.0;  
+uniform fs_params {
+    vec2 offset;
+};
 
 void main() {
     /* GLSL ES 1.0 (WebGL 1.0) does not support array constructor */
     vec2 offsets[9];
-    offsets[0] = vec2(-offset,  offset); // top-left
-    offsets[1] = vec2( 0.0f,    offset); // top-center
-    offsets[2] = vec2( offset,  offset); // top-right
-    offsets[3] = vec2(-offset,  0.0f);   // center-left
-    offsets[4] = vec2( 0.0f,    0.0f);   // center-center
-    offsets[5] = vec2( offset,  0.0f);   // center-right
-    offsets[6] = vec2(-offset, -offset); // bottom-left
-    offsets[7] = vec2( 0.0f,   -offset); // bottom-center
-    offsets[8] = vec2( offset, -offset); // bottom-right    
+    offsets[0] = vec2(-offset.x,  offset.y); // top-left
+    offsets[1] = vec2( 0.0,       offset.y); // top-center
+    offsets[2] = vec2( offset.x,  offset.y); // top-right
+    offsets[3] = vec2(-offset.x,  0.0);   // center-left
+    offsets[4] = vec2( 0.0,       0.0);   // center-center
+    offsets[5] = vec2( offset.x,  0.0);   // center-right
+    offsets[6] = vec2(-offset.x, -offset.y); // bottom-left
+    offsets[7] = vec2( 0.0,      -offset.y); // bottom-center
+    offsets[8] = vec2( offset.x, -offset.y); // bottom-right    
 
     float kernel[9];
     kernel[0] = kernel[1] = kernel[2] = kernel[3] = 1.;

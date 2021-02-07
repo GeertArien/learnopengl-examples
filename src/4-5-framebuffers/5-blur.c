@@ -270,6 +270,13 @@ void frame(void) {
     sg_begin_default_pass(&state.display.pass_action, sapp_width(), sapp_height());
     sg_apply_pipeline(state.display.pip);
     sg_apply_bindings(&state.display.bind);
+
+    /* offset should scale with dimensions of offscreen framebuffer */
+    fs_params_t fs_params = {
+        .offset = HMM_Vec2(2.f / sapp_width(), 2.f / sapp_height())
+    };
+    sg_apply_uniforms(SG_SHADERSTAGE_FS, SLOT_fs_params, &fs_params, sizeof(fs_params));
+
     sg_draw(0, 6, 1);
 
     lopgl_render_help();

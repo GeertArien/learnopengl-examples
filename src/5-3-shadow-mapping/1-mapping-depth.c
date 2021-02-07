@@ -29,7 +29,7 @@ static void init(void) {
     lopgl_setup();
 
     // compute light space matrix
-    hmm_vec3 light_pos = HMM_Vec3(-2.f, 4.f, -1.f);
+    hmm_vec3 light_pos = HMM_Vec3(-2.f, 4.65f, -1.f);
     float near_plane = 1.f;
     float far_plane = 7.5f;
     hmm_mat4 light_projection = HMM_Orthographic(-10.f, 10.f, -10.f, 10.f, near_plane, far_plane);
@@ -243,7 +243,11 @@ void frame(void) {
 }
 
 void event(const sapp_event* e) {
-    lopgl_handle_input(e);
+    if (e->type == SAPP_EVENTTYPE_KEY_DOWN) {
+        if (e->key_code == SAPP_KEYCODE_ESCAPE) {
+            sapp_request_quit();
+        }
+    }
 }
 
 void cleanup(void) {

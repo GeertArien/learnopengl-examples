@@ -5,7 +5,6 @@
 @vs vs_offscreen
 in vec3 a_pos;
 in vec2 a_tex_coords;
-
 out vec2 tex_coords;
 
 uniform vs_params {
@@ -23,7 +22,6 @@ void main() {
 @vs vs_display
 in vec2 a_pos;
 in vec2 a_tex_coords;
-
 out vec2 tex_coords;
 
 void main() {
@@ -34,7 +32,6 @@ void main() {
 
 @fs fs
 in vec2 tex_coords;
-
 out vec4 frag_color;
 
 uniform sampler2D diffuse_texture;
