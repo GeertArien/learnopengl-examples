@@ -7,7 +7,9 @@ policies:
 imports:
   sokol:
     git: https://github.com/floooh/sokol
+    branch: pre-feb2021-api-changes
   sokol-tools-bin:
     git: https://github.com/floooh/sokol-tools-bin
+    branch: pre-feb2021-api-changes
   fips-utils:
     git: https://github.com/fips-libs/fips-utils
